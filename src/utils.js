@@ -15,58 +15,45 @@ let parseParams = (value) => {
     }
 }
 
-let iterateQueryString = (queryString, callback) => {
-    let keyValues = queryString.split('&');
-    keyValues.forEach((keyValue) => {
-        let arr = keyValue.split('=');
-        callback(arr.shift(), arr.join('='));
+let extractQuery = (queryString) => queryString.split('&').map(keyValue => {
+    let [key, value] = keyValue.split(/=(.+)/);
+    return [key, parseParams(value)]
+});
+
+let setQuery = (queryString) => extractQuery(queryString).reduce((query, arg) => {
+    let [name, value] = arg;
+    return Object.assign({}, query, {
+        [name]: (typeof query[name] === 'string') ? [query[name], value] :
+                    (Array.isArray(query[name])) ? query[name].concat([value]) : value
     });
-}
-
-let setQuery = (parts) => {
-    let query = {};
-    if (parts) {
-        iterateQueryString(parts, (name, value) => {
-            value = parseParams(value);
-            if (!query[name]) {
-                query[name] = value;
-            }
-            else if (typeof query[name] === 'string') {
-                query[name] = [query[name], value];
-            }
-            else {
-                query[name].push(value);
-            }
-        });
-    }
-    return query;
-}
+}, {});
 
 
-let route = (pattern) => {
+let preparePattern = pattern => {
     if (pattern === '') {
-        pattern = pattern.replace(/^\(\/\)/g, '').replace(/^\/|$/g, '');
+        return pattern.replace(/^\(\/\)/g, '').replace(/^\/|$/g, '')
     } else {
         let match = pattern.match(/^(\/|\(\/)/g);
-        if (match === null) {
-            pattern = pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern;
-        }
+        return match === null ? pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern : pattern;
     }
+}
 
-    let route = pattern.replace(params.ESCAPE_PARAM, '\\$&')
+let route = (pattern) => {
+    let _route = preparePattern(pattern)
+        .replace(params.ESCAPE_PARAM, '\\$&')
         .replace(params.OPTIONAL_PARAM, '(?:$1)?')
         .replace(params.NAMED_PARAM, function(match, optional) {
             return optional ? match : '([^\/]+)';
         }).replace(params.SPLAT_PARAM, '(.*)');
 
-    return new RegExp('^' + route);
+    return new RegExp('^' + _route);
 };
 
 let extractURI = (location) => {
     let [segments, query] = location.split('?', 2);
     return {
         segments,
-        query: setQuery(query)
+        query: query ? setQuery(query) : {}
     }
 };
 
@@ -78,7 +65,7 @@ let extractRoute = (pattern) => {
                 next = params.input.replace(params[0], '');
 
             return {
-                params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a=>a!==null),
+                params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
                 next:   next === '' ? null : next
             }
         } else {

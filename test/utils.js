@@ -5,17 +5,17 @@ describe('utils for uri segment manipulation', () => {
 
     describe('extracting Query and segment', () => {
         it('getUri return query, and segments', () => {
-            let location = '/one/two?a=1&b=2&c=3';
+            let location = '/one/two?a=1&b=2&c=3&a=23';
             let {segments, query} = extractURI(location);
             expect(segments).to.be.eql('/one/two');
-            expect(query).to.be.eql({a: '1', b: '2', c: '3'})
+            expect(query).to.be.eql({a: ['1','23'], b: '2', c: '3'})
         });
 
         it('getUri return query, and segments, more complex', () => {
-            let location = '/one/two?a=someString&b={formula:3}&c=crazySegment';
+            let location = '/one/two?a=someString&b={formula:3}&c=crazySegment=4';
             let {segments, query} = extractURI(location);
             expect(segments).to.be.eql('/one/two');
-            expect(query).to.be.eql({a: 'someString', b: '{formula:3}', c: 'crazySegment'})
+            expect(query).to.be.eql({a: 'someString', b: '{formula:3}', c: 'crazySegment=4'})
         });
 
         it('getUri return segments', () => {
