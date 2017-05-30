@@ -50,9 +50,9 @@ let route = (pattern) => {
 };
 
 let extractURI = (location) => {
-    let [segments, query] = location.split('?', 2);
+    let [path, query] = location.split('?', 2);
     return {
-        segments,
+        path,
         query: query ? setQuery(query) : {}
     }
 };
@@ -63,20 +63,20 @@ let extractRoute = (pattern) => {
         if (match.test(loc)) {
             let params = match.exec(loc),
                 next = params.input.replace(params[0], '');
-
             return {
                 params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
-                next:   next === '' ? null : next
-            }
-        } else {
-            return {
-                params: null,
-                next:   null
+                next:   next === '' ? null : next,
+                match:  true
             }
         }
+        return {
+            params: null,
+            next:   null,
+            match:  false
+        };
     }
 
 }
 
 
-export {extractRoute, setQuery, extractURI};
+export {extractRoute, extractURI};

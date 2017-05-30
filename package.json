@@ -1,6 +1,7 @@
 {
     "name": "router_imutable",
     "version": "0.0.1",
+    "private": true,
     "dependencies": {
         "functional_tasks": "0.0.23"
     },

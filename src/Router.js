@@ -1,60 +1,72 @@
-/**
- * Created by guntars on 25/05/2017.
- */
-let parsePath = (path) => path.split('/');
+import {extractRoute, extractURI} from './utils';
+import {task} from 'functional/core/Task';
+
+let router = (...args) => new Router(...args);
 class Router {
-    constructor(df) {
+    constructor(defaults = {}) {
         this._routes = [];
+        this._defaults = Object.assign({match: false}, defaults);
 
     };
 
-    get(path, cb) {
-        return this.addRequest(path, 'GET', cb);
+    get(path, routeTask) {
+        return this.addRequest(path, 'GET', routeTask);
     };
 
-    post(path, cb) {
-        return this.addRequest(path, 'POST', cb);
+    post(path, routeTask) {
+        return this.addRequest(path, 'POST', routeTask);
     };
 
-    delete(path, cb) {
-        return this.addRequest(path, 'DELETE', cb);
+    delete(path, routeTask) {
+        return this.addRequest(path, 'DELETE', routeTask);
     };
 
-    put(path, cb) {
-        return this.addRequest(path, 'PUT', cb);
+    put(path, routeTask) {
+        return this.addRequest(path, 'PUT', routeTask);
     };
 
     addRequest(path, method, cb) {
-        let chunks = parsePath(path);
-        let route = {
-            path,
-            chunks,
-            method,
-            cb
-        };
-        this._routes.push(route);
+        let {_routes} = this,
+            routeTask = cb.isTask && cb.isTask() ? cb : task(cb),
+            route = {
+                pattern: extractRoute(path),
+                method,
+                routeTask
+            };
+        _routes.push(route);
         return {
             remove(){
-                this._routes.splice(this._routes.indexOf(route), 1);
+                _routes.splice(_routes.indexOf(route), 1);
             }
         }
     };
 
 
     _getRoute(options) {
-        return this._routes.find(route => route.path === options.path && route.method === options.method);
+        let {next, method, body} = options,
+            {_routes} = this,
+            {query, path} = extractURI(next),
+            match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
+
+        if (match) {
+            let {routeTask, pattern} = match,
+                {params, next} = pattern(path);
+            return task(Object.assign({}, this._defaults, {
+                query,
+                params,
+                method,
+                next,
+                body,
+                match: true
+            })).through(routeTask);
+        } else {
+            return task(this._defaults);
+        }
+
     }
 
     trigger(options) {
-        let route = this._getRoute(options);
-        return new Promise((res, rej) => {
-            if (route) {
-                res(route.cb)
-            } else {
-                rej();
-            }
-        })
+        return this._getRoute(options);
     }
 }
-let router = (...args) => new Router(...args);
 export {Router, router}

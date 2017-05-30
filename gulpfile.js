@@ -53,6 +53,20 @@ let rollupStream = (srcDir) => chain((chunk) => {
         entry:      path,
         format:     'cjs',
         moduleName: moduleName,
+        plugins:[
+            forceBinding([
+                './node_modules/functional_tasks/src/functional/core/Task',
+                'Task'
+            ]),
+            includePaths({
+                include:    {
+                    // Import example: import angular from 'angular';
+                    'functional/core/Task':   './node_modules/functional_tasks/src/functional/core/Task',
+                    'functional/async/Fetch': './node_modules/functional_tasks/src/functional/async/Fetch'
+                },
+                extensions: ['.js']
+            })
+        ],
     }).pipe(source(moduleName));
 });
 
