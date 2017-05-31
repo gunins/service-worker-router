@@ -43,7 +43,7 @@ class Router {
 
 
     _getRoute(options) {
-        let {next, method, body} = options,
+        let {next, method} = options,
             {_routes} = this,
             {query, path} = extractURI(next),
             match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
@@ -51,14 +51,15 @@ class Router {
         if (match) {
             let {routeTask, pattern} = match,
                 {params, next} = pattern(path);
-            return task(Object.assign({}, this._defaults, {
-                query,
-                params,
-                method,
-                next,
-                body,
-                match: true
-            })).through(routeTask);
+            return task(Object.assign(
+                {},
+                this._defaults,
+                options, {
+                    query,
+                    params,
+                    next,
+                    match: true
+                })).through(routeTask);
         } else {
             return task(this._defaults);
         }

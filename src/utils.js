@@ -42,9 +42,8 @@ let route = (pattern) => {
     let _route = preparePattern(pattern)
         .replace(params.ESCAPE_PARAM, '\\$&')
         .replace(params.OPTIONAL_PARAM, '(?:$1)?')
-        .replace(params.NAMED_PARAM, function(match, optional) {
-            return optional ? match : '([^\/]+)';
-        }).replace(params.SPLAT_PARAM, '(.*)');
+        .replace(params.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
+        .replace(params.SPLAT_PARAM, '(.*)');
 
     return new RegExp('^' + _route);
 };
@@ -63,10 +62,13 @@ let extractRoute = (pattern) => {
         if (match.test(loc)) {
             let params = match.exec(loc),
                 next = params.input.replace(params[0], '');
-            return {
-                params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
-                next:   next === '' ? null : next,
-                match:  true
+            if (next === '' || next.indexOf('/') === 0) {
+
+                return {
+                    params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
+                    next:   next === '' ? null : next,
+                    match:  true
+                }
             }
         }
         return {

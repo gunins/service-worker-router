@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "private": true,
     "dependencies": {
-        "functional_tasks": "0.0.23"
+        "functional_tasks": "0.0.24"
     },
     "devDependencies": {
         "chai": "3.5.0",

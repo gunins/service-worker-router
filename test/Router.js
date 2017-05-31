@@ -26,7 +26,7 @@ describe('Router tests: ', () => {
         }));
 
         let {match} = await routes.trigger({
-            next:   '/b',
+            next:   '/ab',
             method: 'GET'
         }).unsafeRun();
 
@@ -48,8 +48,10 @@ describe('Router tests: ', () => {
         }));
 
         let res = await  routes.trigger({
-            next:   '/a',
-            method: 'GET'
+            custom:  1,
+            another: 2,
+            next:    '/a',
+            method:  'GET'
         }).unsafeRun();
         expect(res).to.be.eql(['a'])
 

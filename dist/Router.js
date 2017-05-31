@@ -45,9 +45,8 @@ let route = (pattern) => {
     let _route = preparePattern(pattern)
         .replace(params.ESCAPE_PARAM, '\\$&')
         .replace(params.OPTIONAL_PARAM, '(?:$1)?')
-        .replace(params.NAMED_PARAM, function(match, optional) {
-            return optional ? match : '([^\/]+)';
-        }).replace(params.SPLAT_PARAM, '(.*)');
+        .replace(params.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
+        .replace(params.SPLAT_PARAM, '(.*)');
 
     return new RegExp('^' + _route);
 };
@@ -66,10 +65,13 @@ let extractRoute = (pattern) => {
         if (match.test(loc)) {
             let params = match.exec(loc),
                 next = params.input.replace(params[0], '');
-            return {
-                params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
-                next:   next === '' ? null : next,
-                match:  true
+            if (next === '' || next.indexOf('/') === 0) {
+
+                return {
+                    params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
+                    next:   next === '' ? null : next,
+                    match:  true
+                }
             }
         }
         return {
@@ -123,7 +125,7 @@ class Router {
 
 
     _getRoute(options) {
-        let {next, method, body} = options,
+        let {next, method} = options,
             {_routes} = this,
             {query, path} = extractURI(next),
             match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
@@ -131,14 +133,15 @@ class Router {
         if (match) {
             let {routeTask, pattern} = match,
                 {params, next} = pattern(path);
-            return functional_core_Task.task(Object.assign({}, this._defaults, {
-                query,
-                params,
-                method,
-                next,
-                body,
-                match: true
-            })).through(routeTask);
+            return functional_core_Task.task(Object.assign(
+                {},
+                this._defaults,
+                options, {
+                    query,
+                    params,
+                    next,
+                    match: true
+                })).through(routeTask);
         } else {
             return functional_core_Task.task(this._defaults);
         }
