@@ -43,8 +43,8 @@ describe('Router tests: ', () => {
 
     it('dynamic route', async () => {
         let routes = router();
-        routes.get('/:a', task(a => {
-            return a.params
+        routes.get('/:a', task(({req, resp}) => {
+            return req.params
         }));
 
         let res = await  routes.trigger({
@@ -60,22 +60,22 @@ describe('Router tests: ', () => {
         let cb = spy();
         let route = router();
 
-        let taskB = task(b => {
+        let taskB = task(({req, resp}) => {
             cb();
-            expect(b.params).to.be.eql(['b']);
-            return b.params.concat(b.a)
+            expect(req.params).to.be.eql(['b']);
+            return req.params.concat(resp.a)
         });
 
-        let taskOne = task(a => {
+        let taskOne = task(({req: a}) => {
             let {params, next, method} = a;
-            expect(a.params).to.be.eql(['a']);
+            expect(params).to.be.eql(['a']);
             cb();
             return {params, next, method}
         }).flatMap(data => {
-            let route = router({a: data.params});
+            let route = router({});
             route.get('/:b', taskB);
             cb();
-            return route.trigger(data);
+            return route.trigger(data,{a: data.params});
         });
 
         route.get('/:a', taskOne);
@@ -83,7 +83,9 @@ describe('Router tests: ', () => {
         let res = await  route.trigger({
             next:   '/a/b',
             method: 'GET'
-        }).map(d => d.join(', '))
+        }).map(d => {
+            return d.join(', ')
+        })
             .unsafeRun();
         expect(res).to.be.eql('b, a')
         expect(cb.callCount).to.be.eql(3);

@@ -42,7 +42,7 @@ class Router {
     };
 
 
-    _getRoute(options) {
+    _getRoute(options, resp) {
         let {next, method} = options,
             {_routes} = this,
             {query, path} = extractURI(next),
@@ -59,15 +59,15 @@ class Router {
                     params,
                     next,
                     match: true
-                })).through(routeTask);
+                })).map(req => ({req, resp})).through(routeTask);
         } else {
             return task(this._defaults);
         }
 
     }
 
-    trigger(options) {
-        return this._getRoute(options);
+    trigger(options, resp = {}) {
+        return this._getRoute(options, resp);
     }
 }
 export {Router, router}
