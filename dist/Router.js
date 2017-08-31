@@ -84,6 +84,7 @@ let extractRoute = (pattern) => {
 };
 
 let router = (...args) => new Router(...args);
+
 class Router {
     constructor(defaults = {}) {
         this._routes = [];
@@ -117,7 +118,7 @@ class Router {
             };
         _routes.push(route);
         return {
-            remove(){
+            remove() {
                 _routes.splice(_routes.indexOf(route), 1);
             }
         }
@@ -133,15 +134,15 @@ class Router {
         if (match) {
             let {routeTask, pattern} = match,
                 {params, next} = pattern(path);
+
             return functional_core_Task.task(Object.assign(
                 {},
                 this._defaults,
                 options, {
                     query,
                     params,
-                    next,
-                    match: true
-                })).map(req => ({req, resp})).through(routeTask);
+                    next
+                })).map(req => ({req, resp: Object.assign(resp, {match: true})})).through(routeTask);
         } else {
             return functional_core_Task.task(this._defaults);
         }
