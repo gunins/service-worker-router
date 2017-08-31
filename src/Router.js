@@ -1,12 +1,15 @@
 import {extractRoute, extractURI} from './utils';
 import {task} from 'functional/core/Task';
 
-let router = (...args) => new Router(...args);
+const router = (...args) => new Router(...args);
+
+const _getRoute = Symbol('_getRoute');
+const {assign} = Object;
 
 class Router {
     constructor(defaults = {}) {
         this._routes = [];
-        this._defaults = Object.assign({match: false}, defaults);
+        this._defaults = assign({match: false}, defaults);
 
     };
 
@@ -27,7 +30,7 @@ class Router {
     };
 
     addRequest(path, method, cb) {
-        let {_routes} = this,
+        const {_routes} = this,
             routeTask = cb.isTask && cb.isTask() ? cb : task(cb),
             route = {
                 pattern: extractRoute(path),
@@ -43,24 +46,24 @@ class Router {
     };
 
 
-    _getRoute(options, resp) {
-        let {next, method} = options,
+    [_getRoute](options, resp) {
+        const {next, method} = options,
             {_routes} = this,
             {query, path} = extractURI(next),
             match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
 
         if (match) {
-            let {routeTask, pattern} = match,
+            const {routeTask, pattern} = match,
                 {params, next} = pattern(path);
 
-            return task(Object.assign(
+            return task(assign(
                 {},
                 this._defaults,
                 options, {
                     query,
                     params,
                     next
-                })).map(req => ({req, resp: Object.assign(resp, {match: true})})).through(routeTask);
+                })).map(req => ({req, resp: assign(resp, {match: true})})).through(routeTask);
         } else {
             return task(this._defaults);
         }
@@ -68,7 +71,7 @@ class Router {
     }
 
     trigger(options, resp = {}) {
-        return this._getRoute(options, resp);
+        return this[_getRoute](options, resp);
     }
 }
 
