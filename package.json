@@ -1,6 +1,6 @@
 {
-    "name": "@gunins/router",
-    "version": "0.0.3",
+    "name": "sw-router",
+    "version": "0.0.4",
     "description": "Nodejs Server side and Service Worker lazy router.",
     "repository": {
         "type": "git",
