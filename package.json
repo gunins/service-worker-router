@@ -1,6 +1,12 @@
 {
     "name": "@gunins/router",
     "version": "0.0.1",
+    "description": "Nodejs Server side and Service Worker lazy router.",
+    "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gunins/service-worker-router.git"
+    },
     "dependencies": {
         "functional_tasks": "0.0.24"
     },
