@@ -1,4 +1,7 @@
 const gulp = require('gulp'),
+    git = require('gulp-git'),
+    bump = require('gulp-bump'),
+    filter = require('gulp-filter'),
     rollup = require('rollup-stream'),
     source = require('vinyl-source-stream'),
     del = require('del'),
