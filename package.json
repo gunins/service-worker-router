@@ -1,6 +1,6 @@
 {
-    "name": "sw-router",
-    "version": "0.0.4",
+    "name": "functional-router",
+    "version": "0.0.5",
     "description": "Nodejs Server side and Service Worker lazy router.",
     "repository": {
         "type": "git",
