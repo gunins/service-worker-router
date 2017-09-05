@@ -1,8 +1,7 @@
 {
     "name": "@gunins/router",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Nodejs Server side and Service Worker lazy router.",
-    "version": "0.0.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/gunins/service-worker-router.git"
@@ -20,7 +19,7 @@
         "gulp-clean": "0.3.2",
         "gulp-copy": "1.0.0",
         "gulp-filter": "5.0.0",
-        "gulp-git": "2.2.0",
+        "gulp-git": "2.4.0",
         "gulp-mocha": "4.3.0",
         "gulp-tag-version": "1.3.0",
         "gulp-uglify": "2.1.2",
