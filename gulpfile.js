@@ -11,6 +11,7 @@ const gulp = require('gulp'),
     async = require('rollup-plugin-async'),
     exec = require('child_process').exec,
     through = require('through2'),
+    tag_version = require('gulp-tag-version'),
     babili = require("gulp-babili");
 
 
@@ -53,7 +54,7 @@ let rollupStream = (srcDir) => chain((chunk) => {
         entry:      path,
         format:     'cjs',
         moduleName: moduleName,
-        plugins:[
+        plugins:    [
             forceBinding([
                 './node_modules/functional_tasks/src/functional/core/Task',
                 'Task'
@@ -95,17 +96,13 @@ gulp.task('copy', () => {
 gulp.task('router', () => {
     return rollup({
         entry:      './src/Router.js',
-        format:     'iife',
-        moduleName: 'utils',
+        format:     'umd',
+        moduleName: 'Router',
         plugins:    [
             async()
         ]
     }).pipe(source('Router.js'))
         .pipe(gulp.dest('./dist'));
-});
-
-gulp.task('main', (done) => {
-    sequence('clean', 'router', done)
 });
 
 
@@ -122,10 +119,62 @@ gulp.task('runTest', () => {
 
 });
 
+
+let inc = (importance) => gulp.src(['./package.json'])
+// bump the version number in those files
+    .pipe(bump({type: importance}))
+    // save it back to filesystem
+    .pipe(gulp.dest('./'))
+    // commit the changed version number
+    .pipe(git.commit('bumps package version'))
+
+    // read only one file to get the version number
+    .pipe(filter('package.json'))
+    // **tag it in the repository**
+    .pipe(tag_version());
+
+gulp.task('pushTags', ['test', 'bump:patch'], (cb) => {
+    exec('git push --tags', (err, stdout, stderr) => {
+        console.log(stdout);
+        console.log(stderr);
+        cb(err);
+    });
+});
+
+gulp.task('compress', () => gulp.src('./dist/**/*.js')
+    .pipe(babili({
+        mangle: {
+            keepClassNames: true
+        }
+    }))
+    .pipe(gulp.dest("./target")));
+
+gulp.task('compressRequire', () => gulp.src('./node_modules/requirejs/require.js')
+    .pipe(babili({
+        mangle: {
+            keepClassNames: true
+        }
+    }))
+    .pipe(gulp.dest("./target")));
+
+gulp.task('publish', ['pushTags'], (cb) => {
+    exec('npm publish ./', (err, stdout, stderr) => {
+        console.log(stdout);
+        console.log(stderr);
+        cb(err);
+    });
+});
+
+gulp.task('bump:patch', () => inc('patch'));
+gulp.task('bump:feature', () => inc('minor'));
+gulp.task('bump:release', () => inc('major'));
+
+gulp.task('main', (done) => {
+    sequence('clean', 'router', 'compress', done)
+});
 gulp.task('test', done => {
     sequence('main', 'rollupTest', 'runTest', done);
 });
-
 
 gulp.task('default', ['main']);
 

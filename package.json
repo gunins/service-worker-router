@@ -1,7 +1,6 @@
 {
-    "name": "router_imutable",
-    "version": "0.0.2",
-    "private": true,
+    "name": "@gunins/router",
+    "version": "0.0.1",
     "dependencies": {
         "functional_tasks": "0.0.24"
     },

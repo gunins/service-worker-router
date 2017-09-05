@@ -62,8 +62,9 @@ class Router {
                 options, {
                     query,
                     params,
-                    next
-                })).map(req => ({req, resp: assign(resp, {match: true})})).through(routeTask);
+                    next,
+                    match: true
+                })).map(req => ({req, resp})).through(routeTask);
         } else {
             return task(this._defaults);
         }

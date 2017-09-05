@@ -1,6 +1,6 @@
-## Immutable Router
+## Service Worker Router
 
-Server side lazy router. Difference from client, client routers, can take same route on multiple locations on page. 
+Nodejs Server side and `Service Worker` lazy router. Difference from client, client routers can take same route on multiple locations on page. 
 Because this router we will use in Server side and service workers. We need to handle it outside from express app.
 
 Router taking static routes like `/a/b/c`, also dynamic `/a/:b/:c` dynamic part will return `data=>data.params` in same order.

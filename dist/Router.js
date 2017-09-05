@@ -1,5 +1,8 @@
-(function (exports,functional_core_Task) {
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('functional/core/Task')) :
+	typeof define === 'function' && define.amd ? define(['exports', 'functional/core/Task'], factory) :
+	(factory((global.Router = global.Router || {}),global.functional_core_Task));
+}(this, (function (exports,functional_core_Task) { 'use strict';
 
 let params = {
     OPTIONAL_PARAM: /\((.*?)\)/g,
@@ -144,8 +147,9 @@ class Router {
                 options, {
                     query,
                     params,
-                    next
-                })).map(req => ({req, resp: assign(resp, {match: true})})).through(routeTask);
+                    next,
+                    match: true
+                })).map(req => ({req, resp})).through(routeTask);
         } else {
             return functional_core_Task.task(this._defaults);
         }
@@ -160,4 +164,6 @@ class Router {
 exports.Router = Router;
 exports.router = router;
 
-}((this.utils = this.utils || {}),functional_core_Task));
+Object.defineProperty(exports, '__esModule', { value: true });
+
+})));
