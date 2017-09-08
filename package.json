@@ -1,13 +1,13 @@
 {
     "name": "functional-router",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "description": "Nodejs Server side and Service Worker lazy router.",
     "repository": {
         "type": "git",
         "url": "https://github.com/gunins/service-worker-router.git"
     },
     "dependencies": {
-        "functional_tasks": "0.0.24"
+        "functional_tasks": "0.0.25"
     },
     "devDependencies": {
         "chai": "3.5.0",
