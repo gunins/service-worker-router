@@ -9,6 +9,8 @@ const {assign} = Object;
 class Router {
     constructor(defaults = {}) {
         this._routes = [];
+        const {scope} = defaults;
+        this._scope = scope && scope !== '' ? '/' + scope.replace(/^\/|\/$/g, '') : '';
         this._defaults = assign({match: false}, defaults);
 
     };
@@ -30,13 +32,13 @@ class Router {
     };
 
     addRequest(path, method, cb) {
-        const {_routes} = this,
-            routeTask = cb.isTask && cb.isTask() ? cb : task(cb),
-            route = {
-                pattern: extractRoute(path),
-                method,
-                routeTask
-            };
+        const {_routes, _scope} = this;
+        const routeTask = cb.isTask && cb.isTask() ? cb : task(cb);
+        const route = {
+            pattern: extractRoute(_scope + '/' + path.replace(/^\//g, '')),
+            method,
+            routeTask
+        };
         _routes.push(route);
         return {
             remove() {
@@ -47,10 +49,10 @@ class Router {
 
 
     [_getRoute](options, resp) {
-        const {next, method} = options,
-            {_routes} = this,
-            {query, path} = extractURI(next),
-            match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
+        const {next, method} = options;
+        const {_routes, _defaults} = this;
+        const {query, path} = extractURI(next);
+        const match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
 
         if (match) {
             const {routeTask, pattern} = match,
@@ -58,7 +60,7 @@ class Router {
 
             return task(assign(
                 {},
-                this._defaults,
+                _defaults,
                 options, {
                     query,
                     params,

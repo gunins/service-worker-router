@@ -56,6 +56,49 @@ describe('Router tests: ', () => {
         expect(res).to.be.eql(['a'])
 
     });
+
+    it('Custom scope', async () => {
+        let routes = router({scope:'/b'});
+        routes.get('/:a', task(({req, resp}) => {
+            return req.params
+        }));
+
+        let res = await  routes.trigger({
+            custom:  1,
+            another: 2,
+            next:    '/b/a',
+            method:  'GET'
+        }).unsafeRun();
+        expect(res).to.be.eql(['a']);
+
+        let routesA = router({scope:'b/c'});
+        routesA.get('/:a', task(({req, resp}) => {
+            return req.params
+        }));
+
+        let resA = await  routesA.trigger({
+            custom:  1,
+            another: 2,
+            next:    '/b/c/a',
+            method:  'GET'
+        }).unsafeRun();
+        expect(resA).to.be.eql(['a']);
+
+        let routesB = router({scope:'/b/'});
+        routesB.get('/:a', task(({req, resp}) => {
+            return req.params
+        }));
+
+        let resB = await  routesB.trigger({
+            custom:  1,
+            another: 2,
+            next:    '/b/a',
+            method:  'GET'
+        }).unsafeRun();
+        expect(resB).to.be.eql(['a']);
+
+    });
+
     it('nested route', async () => {
         let cb = spy();
         let route = router();
