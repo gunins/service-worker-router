@@ -59,7 +59,7 @@ describe('Router tests: ', () => {
 
     it('Custom scope', async () => {
         let routes = router({scope:'/b'});
-        routes.get('/:a', task(({req, resp}) => {
+        routes.get(':a', task(({req, resp}) => {
             return req.params
         }));
 
