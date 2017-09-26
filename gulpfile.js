@@ -54,9 +54,9 @@ let rollupStream = (srcDir) => chain((chunk) => {
         moduleName = path.replace(baseDir, ''),
         excluded = excludePaths.filter(file => file !== path);
     return rollup({
-        entry:      path,
+        input:      path,
         format:     'cjs',
-        moduleName: moduleName,
+        name: moduleName,
         plugins:    [
             forceBinding([
                 './node_modules/functional_tasks/src/functional/core/Task',
@@ -98,9 +98,9 @@ gulp.task('copy', () => {
 
 gulp.task('router', () => {
     return rollup({
-        entry:      './src/Router.js',
+        input:      './src/Router.js',
         format:     'umd',
-        moduleName: 'Router',
+        name: 'Router',
         plugins:    [
             async()
         ]

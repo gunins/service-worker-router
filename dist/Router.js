@@ -1,8 +1,8 @@
 (function (global, factory) {
 	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('functional/core/Task')) :
 	typeof define === 'function' && define.amd ? define(['exports', 'functional/core/Task'], factory) :
-	(factory((global.Router = global.Router || {}),global.functional_core_Task));
-}(this, (function (exports,functional_core_Task) { 'use strict';
+	(factory((global.Router = {}),global.Task));
+}(this, (function (exports,Task) { 'use strict';
 
 const params = {
     OPTIONAL_PARAM: /\((.*?)\)/g,
@@ -95,6 +95,7 @@ class Router {
     constructor(defaults = {}) {
         this._routes = [];
         const {scope} = defaults;
+        Reflect.deleteProperty(defaults, 'scope');
         this._scope = scope && scope !== '' ? '/' + scope.replace(/^\/|\/$/g, '') : '';
         this._defaults = assign({match: false}, defaults);
 
@@ -118,7 +119,7 @@ class Router {
 
     addRequest(path, method, cb) {
         const {_routes, _scope} = this;
-        const routeTask = cb.isTask && cb.isTask() ? cb : functional_core_Task.task(cb);
+        const routeTask = cb.isTask && cb.isTask() ? cb : Task.task(cb);
         const route = {
             pattern: extractRoute(_scope + '/' + path.replace(/^\//g, '')),
             method,
@@ -143,7 +144,7 @@ class Router {
             const {routeTask, pattern} = match,
                 {params, next} = pattern(path);
 
-            return functional_core_Task.task(assign(
+            return Task.task(assign(
                 {},
                 _defaults,
                 options, {
@@ -153,7 +154,7 @@ class Router {
                     match: true
                 })).map(req => ({req, resp})).through(routeTask);
         } else {
-            return functional_core_Task.task(this._defaults);
+            return Task.task(this._defaults);
         }
 
     }

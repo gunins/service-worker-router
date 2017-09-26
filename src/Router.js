@@ -10,6 +10,7 @@ class Router {
     constructor(defaults = {}) {
         this._routes = [];
         const {scope} = defaults;
+        Reflect.deleteProperty(defaults, 'scope');
         this._scope = scope && scope !== '' ? '/' + scope.replace(/^\/|\/$/g, '') : '';
         this._defaults = assign({match: false}, defaults);
 
