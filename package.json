@@ -7,13 +7,15 @@
         "url": "https://github.com/gunins/service-worker-router.git"
     },
     "dependencies": {
-        "functional_tasks": "0.0.25"
+        "body-parser": "^1.18.3",
+        "functional_tasks": "0.0.25",
+        "morgan": "^1.9.1"
     },
     "devDependencies": {
         "chai": "3.5.0",
         "del": "2.2.2",
         "fetch-mock": "5.10.0",
-        "gulp": "3.9.1",
+        "gulp": "4.0.0",
         "gulp-babili": "0.0.2",
         "gulp-bump": "2.7.0",
         "gulp-clean": "0.3.2",
@@ -35,9 +37,10 @@
         "run-sequence": "1.2.2",
         "sinon": "2.1.0",
         "through2": "^2.0.3",
-        "vinyl-source-stream": "1.1.0"
+        "vinyl-source-stream": "2.0.0"
     },
     "scripts": {
-        "test": "gulp test"
+        "test": "gulp test",
+        "start": "gulp restExample && node ./examples/rest/dist/rest.js"
     }
 }
