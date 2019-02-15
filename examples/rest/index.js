@@ -4,16 +4,16 @@ import http from 'http';
 import bodyParser from 'body-parser'
 import {response, notFound} from '../../src/http/response';
 import {jsonHeader} from '../../src/http/header';
-import {routeMatch} from '../../src/http/match';
 import {pipe} from '../../src/http/pipe';
+import {routeMatch} from '../../src/http/match';
 
-import {routes} from './rest';
+import routes from './rest';
 
 const restPipe = (req, resp) => task({req, resp})
     .through(pipe(morgan('combined')))
     .through(pipe(jsonHeader))
     .through(pipe(bodyParser.json()))
-    .flatMap(_ => routeMatch(routes)(_))
+    .flatMap(_ => routeMatch(routes, _))
     .unsafeRun();
 
 http.createServer((req, resp) => {
