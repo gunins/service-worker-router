@@ -4,7 +4,54 @@
 	(factory((global.Router = {}),global.Task));
 }(this, (function (exports,Task) { 'use strict';
 
-const params = {
+const lambda = () => {
+};
+//Option will find true statement and returning result (Call by Value)
+const option = (...methods) => ({
+    or(bool, left) {
+        return option(...methods, {bool, left})
+    },
+    finally(right = lambda) {
+        const {left} = methods.find(({bool}) => bool) || {};
+        return left ? left() : right();
+    }
+});
+
+const pipe = (fn, ...fns) => (initial, ...args) => fns.reduce((acc, f) => f(acc, ...args), fn(initial, ...args));
+const compose = (...fns) => pipe(...fns.reverse());
+const curry = (fn, ...args) => (fn.length <= args.length) ? fn(...args) : (...more) => curry(fn, ...args, ...more);
+
+function __async(g){return new Promise(function(s,j){function c(a,x){try{var r=g[x?"throw":"next"](a);}catch(e){j(e);return}r.done?s(r.value):Promise.resolve(r.value).then(c,d);}function d(e){c(e,1);}c();})}
+
+const {isArray} = Array;
+const {assign: assign$2} = Object;
+
+
+const prop = curry((key, obj) => (obj || {})[key]);
+const assoc = curry((key, val, obj) => assign$2(isArray(obj) ? [] : {}, obj || {}, {[key]: val}));
+
+const lens = (get, set) => ({get, set});
+
+const view = curry((lens, obj) => lens.get(obj));
+const set = curry((lens, val, obj) => lens.set(val, obj));
+const setAsync = curry((lens, val, obj) =>__async(function*(){ return lens.set(yield val, obj)}()));
+
+const over = curry((lens, fn, obj) => set(lens, fn(view(lens, obj)), obj));
+const overAsync = curry((lens, fn, obj) =>__async(function*(){ return set(lens, yield fn(view(lens, obj)), obj)}()));
+const setOver = curry((setterLens, getterLens, fn, obj) => set(setterLens, fn(view(getterLens, obj)), obj));
+const setOverAsync = curry((setterLens, getterLens, fn, obj) =>__async(function*(){ return set(setterLens, yield fn(view(getterLens, obj)), obj)}()));
+
+const lensProp = key => lens(prop(key), assoc(key));
+const lensPath = (head, ...tail) => ({
+    get(obj = {}) {
+        return tail.length === 0 ? view(lensProp(head), obj) : view(lensPath(...tail), obj[head]);
+    },
+    set(val, obj = {}) {
+        return tail.length === 0 ? set(lensProp(head), val, obj) : assoc(head, set(lensPath(...tail), val, obj[head]), obj);
+    }
+});
+
+const uriParams = {
     OPTIONAL_PARAM: /\((.*?)\)/g,
     NAMED_PARAM:    /(\(\?)?:\w+/g,
     SPLAT_PARAM:    /\*\w+/g,
@@ -14,8 +61,7 @@ const params = {
 const parseParams = (value) => {
     try {
         return decodeURIComponent(value.replace(/\+/g, ' '));
-    }
-    catch (err) {
+    } catch (err) {
         // Failover to whatever was passed if we get junk data
         return value;
     }
@@ -39,17 +85,17 @@ const preparePattern = pattern => {
     if (pattern === '') {
         return pattern.replace(/^\(\/\)/g, '').replace(/^\/|$/g, '')
     } else {
-        const match = pattern.match(/^(\/|\(\/)/g);
-        return match === null ? pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern : pattern;
+        const match$$1 = pattern.match(/^(\/|\(\/)/g);
+        return match$$1 === null ? pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern : pattern;
     }
 };
 
 const route = (pattern) => {
     const _route = preparePattern(pattern)
-        .replace(params.ESCAPE_PARAM, '\\$&')
-        .replace(params.OPTIONAL_PARAM, '(?:$1)?')
-        .replace(params.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
-        .replace(params.SPLAT_PARAM, '(.*)');
+        .replace(uriParams.ESCAPE_PARAM, '\\$&')
+        .replace(uriParams.OPTIONAL_PARAM, '(?:$1)?')
+        .replace(uriParams.NAMED_PARAM, (match$$1, optional) => optional ? match$$1 : '([^\/]+)')
+        .replace(uriParams.SPLAT_PARAM, '(.*)');
 
     return new RegExp('^' + _route);
 };
@@ -62,28 +108,56 @@ const extractURI = (location) => {
     }
 };
 
-const extractRoute = (pattern) => {
-    const match = route(pattern);
-    return (loc) => {
-        if (match.test(loc)) {
-            const params = match.exec(loc),
-                next = params.input.replace(params[0], '');
-            if (next === '' || next.indexOf('/') === 0) {
+const hasParam = param => param !== undefined;
+const decodeParams = ([head, ...tail] = []) => tail
+    .reduce((acc, param) => option()
+        .or(hasParam(param), () => [...acc, decodeURIComponent(param)])
+        .finally(() => acc), []);
 
-                return {
-                    params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
-                    next:   next === '' ? null : next,
-                    match:  true
-                }
-            }
-        }
-        return {
-            params: null,
-            next:   null,
-            match:  false
-        };
+const paramsInput = view(lensPath('input'));
+const paramsFirst = view(lensPath(0));
+
+const replacePath = _ => (paramsInput(_) || '').replace(paramsFirst(_) || '', '');
+const getNext = (loc, match$$1) => {
+    const params = match$$1.exec(loc);
+    const next = replacePath(params);
+    return {
+        params,
+        next
     }
+};
 
+const hasNext = ({next}) => (next === '' || next.indexOf('/') === 0);
+const hasMatch = (loc, match$$1) => option()
+    .or(match$$1.test(loc), () => {
+        const next = getNext(loc, match$$1);
+        return hasNext(next) ? next : null
+    })
+    .finally(() => null);
+const nextLink = next => next === '' ? null : next;
+
+const nextLens = lensPath('next');
+const paramsLens = lensPath('params');
+const matchLens = lensPath('match');
+
+const hasRoute = (route) => view(nextLens)(route) !== undefined;
+
+const extractRoute = (pattern) => {
+    const match$$1 = route(pattern);
+    return (loc) => {
+        const route = hasMatch(loc, match$$1);
+        return option()
+            .or(hasRoute(route), () => compose(
+                over(paramsLens, decodeParams),
+                over(nextLens, nextLink),
+                set(matchLens, true)
+            )(route))
+            .finally(() => compose(
+                set(matchLens, false),
+                set(paramsLens, null),
+                set(nextLens, null)
+            )({}));
+    }
 };
 
 const router = (...args) => new Router(...args);

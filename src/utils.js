@@ -1,4 +1,8 @@
-const params = {
+import {option} from './lib/option';
+import {compose} from './lib/curry';
+import {lensPath, over, view, set} from './lib/lenses';
+
+const uriParams = {
     OPTIONAL_PARAM: /\((.*?)\)/g,
     NAMED_PARAM:    /(\(\?)?:\w+/g,
     SPLAT_PARAM:    /\*\w+/g,
@@ -8,8 +12,7 @@ const params = {
 const parseParams = (value) => {
     try {
         return decodeURIComponent(value.replace(/\+/g, ' '));
-    }
-    catch (err) {
+    } catch (err) {
         // Failover to whatever was passed if we get junk data
         return value;
     }
@@ -40,10 +43,10 @@ const preparePattern = pattern => {
 
 const route = (pattern) => {
     const _route = preparePattern(pattern)
-        .replace(params.ESCAPE_PARAM, '\\$&')
-        .replace(params.OPTIONAL_PARAM, '(?:$1)?')
-        .replace(params.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
-        .replace(params.SPLAT_PARAM, '(.*)');
+        .replace(uriParams.ESCAPE_PARAM, '\\$&')
+        .replace(uriParams.OPTIONAL_PARAM, '(?:$1)?')
+        .replace(uriParams.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
+        .replace(uriParams.SPLAT_PARAM, '(.*)');
 
     return new RegExp('^' + _route);
 };
@@ -56,29 +59,56 @@ const extractURI = (location) => {
     }
 };
 
+const hasParam = param => param !== undefined;
+const decodeParams = ([head, ...tail] = []) => tail
+    .reduce((acc, param) => option()
+        .or(hasParam(param), () => [...acc, decodeURIComponent(param)])
+        .finally(() => acc), []);
+
+const paramsInput = view(lensPath('input'));
+const paramsFirst = view(lensPath(0));
+
+const replacePath = _ => (paramsInput(_) || '').replace(paramsFirst(_) || '', '');
+const getNext = (loc, match) => {
+    const params = match.exec(loc);
+    const next = replacePath(params);
+    return {
+        params,
+        next
+    }
+};
+
+const hasNext = ({next}) => (next === '' || next.indexOf('/') === 0);
+const hasMatch = (loc, match) => option()
+    .or(match.test(loc), () => {
+        const next = getNext(loc, match);
+        return hasNext(next) ? next : null
+    })
+    .finally(() => null);
+const nextLink = next => next === '' ? null : next;
+
+const nextLens = lensPath('next');
+const paramsLens = lensPath('params');
+const matchLens = lensPath('match');
+
+const hasRoute = (route) => view(nextLens)(route) !== undefined;
+
 const extractRoute = (pattern) => {
     const match = route(pattern);
     return (loc) => {
-        if (match.test(loc)) {
-            const params = match.exec(loc),
-                next = params.input.replace(params[0], '');
-            if (next === '' || next.indexOf('/') === 0) {
-
-                return {
-                    params: params.slice(1).map((param) => param ? decodeURIComponent(param) : null).filter(a => a !== null),
-                    next:   next === '' ? null : next,
-                    match:  true
-                }
-            }
-        }
-        return {
-            params: null,
-            next:   null,
-            match:  false
-        };
+        const route = hasMatch(loc, match);
+        return option()
+            .or(hasRoute(route), () => compose(
+                over(paramsLens, decodeParams),
+                over(nextLens, nextLink),
+                set(matchLens, true)
+            )(route))
+            .finally(() => compose(
+                set(matchLens, false),
+                set(paramsLens, null),
+                set(nextLens, null)
+            )({}));
     }
-
-}
-
+};
 
 export {extractRoute, extractURI};
