@@ -162,16 +162,38 @@ const extractRoute = (pattern) => {
 
 const router = (...args) => new Router(...args);
 
-const _getRoute = Symbol('_getRoute');
 const {assign} = Object;
+
+const hasMethod = (matchedMethod, path, {method, pattern}) => method === matchedMethod && pattern(path).match === true;
+const findRoutes = (method, path, _routes) => _routes.find(_ => hasMethod(method, path, _));
+
+const hasScope = (scope) => scope && scope !== '';
+const setScope = (scope) => option()
+    .or(hasScope(scope), () => '/' + scope.replace(/^\/|\/$/g, ''))
+    .finally(() => '');
+
+const registerRoute = (route, context) => {
+    const {[_routes]: routes} = context;
+    context[_routes] = [...routes, route];
+    return {
+        remove() {
+            context[_routes] = routes.filter(_ => route !== _);
+        }
+    }
+};
+
+const _getRoute = Symbol('_getRoute');
+const _routes = Symbol('_routes');
+const _scope = Symbol('_scope');
+const _defaults = Symbol('_defaults');
 
 class Router {
     constructor(defaults = {}) {
-        this._routes = [];
+        this[_routes] = [];
         const {scope} = defaults;
         Reflect.deleteProperty(defaults, 'scope');
-        this._scope = scope && scope !== '' ? '/' + scope.replace(/^\/|\/$/g, '') : '';
-        this._defaults = assign({match: false}, defaults);
+        this[_scope] = setScope(scope);
+        this[_defaults] = assign({match: false}, defaults);
 
     };
 
@@ -191,46 +213,46 @@ class Router {
         return this.addRequest(path, 'PUT', routeTask);
     };
 
+
     addRequest(path, method, cb) {
-        const {_routes, _scope} = this;
+        const {[_scope]: scope} = this;
         const routeTask = cb.isTask && cb.isTask() ? cb : Task.task(cb);
+        const fullPath = scope + '/' + path.replace(/^\//g, '');
         const route = {
-            pattern: extractRoute(_scope + '/' + path.replace(/^\//g, '')),
+            pattern: extractRoute(fullPath),
             method,
             routeTask
         };
-        _routes.push(route);
-        return {
-            remove() {
-                _routes.splice(_routes.indexOf(route), 1);
-            }
-        }
+        return registerRoute(route, this);
     };
 
 
     [_getRoute](options, resp) {
         const {next, method} = options;
-        const {_routes, _defaults} = this;
         const {query, path} = extractURI(next);
-        const match = _routes.find(rt => rt.method === method && rt.pattern(path).match === true);
-
-        if (match) {
-            const {routeTask, pattern} = match,
-                {params, next} = pattern(path);
-
-            return Task.task(assign(
-                {},
-                _defaults,
-                options, {
+        const {[_routes]: routes, [_defaults]: defaults} = this;
+        const match = findRoutes(method, path, routes);
+        return option()
+            .or(match, () => {
+                const {routeTask, pattern} = match;
+                const {params, next} = pattern(path);
+                const currentParams = {
                     query,
                     params,
                     next,
                     match: true
-                })).map(req => ({req, resp})).through(routeTask);
-        } else {
-            return Task.task(this._defaults);
-        }
+                };
 
+                return Task.task(assign(
+                    {},
+                    defaults,
+                    options,
+                    currentParams
+                ))
+                    .map(req => ({req, resp}))
+                    .through(routeTask);
+            })
+            .finally(() => Task.task(defaults))
     }
 
     trigger(options, resp = {}) {

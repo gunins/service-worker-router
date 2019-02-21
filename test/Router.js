@@ -6,15 +6,22 @@ import {spy} from 'sinon';
 describe('Router tests: ', () => {
     it('sample test', async () => {
         let routes = router();
-        routes.get('/a', task(a => {
+        const {remove} = routes.get('/a', task(a => {
             return 'a route'
         }));
 
-        let res = await  routes.trigger({
+        let res = await routes.trigger({
             next:   '/a',
             method: 'GET'
         }).unsafeRun();
-        expect(res).to.be.eql('a route')
+        expect(res).to.be.eql('a route');
+        remove();
+
+        let res1 = await routes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+        expect(res1).to.be.eql({match: false});
 
     });
     it('sample reject test', async () => {
@@ -47,7 +54,7 @@ describe('Router tests: ', () => {
             return req.params
         }));
 
-        let res = await  routes.trigger({
+        let res = await routes.trigger({
             custom:  1,
             another: 2,
             next:    '/a',
@@ -58,12 +65,12 @@ describe('Router tests: ', () => {
     });
 
     it('Custom scope', async () => {
-        let routes = router({scope:'/b'});
+        let routes = router({scope: '/b'});
         routes.get(':a', task(({req, resp}) => {
             return req.params
         }));
 
-        let res = await  routes.trigger({
+        let res = await routes.trigger({
             custom:  1,
             another: 2,
             next:    '/b/a',
@@ -71,12 +78,12 @@ describe('Router tests: ', () => {
         }).unsafeRun();
         expect(res).to.be.eql(['a']);
 
-        let routesA = router({scope:'b/c'});
+        let routesA = router({scope: 'b/c'});
         routesA.get('/:a', task(({req, resp}) => {
             return req.params
         }));
 
-        let resA = await  routesA.trigger({
+        let resA = await routesA.trigger({
             custom:  1,
             another: 2,
             next:    '/b/c/a',
@@ -84,12 +91,12 @@ describe('Router tests: ', () => {
         }).unsafeRun();
         expect(resA).to.be.eql(['a']);
 
-        let routesB = router({scope:'/b/'});
+        let routesB = router({scope: '/b/'});
         routesB.get('/:a', task(({req, resp}) => {
             return req.params
         }));
 
-        let resB = await  routesB.trigger({
+        let resB = await routesB.trigger({
             custom:  1,
             another: 2,
             next:    '/b/a',
@@ -118,12 +125,12 @@ describe('Router tests: ', () => {
             let route = router({});
             route.get('/:b', taskB);
             cb();
-            return route.trigger(data,{a: data.params});
+            return route.trigger(data, {a: data.params});
         });
 
         route.get('/:a', taskOne);
 
-        let res = await  route.trigger({
+        let res = await route.trigger({
             next:   '/a/b',
             method: 'GET'
         }).map(d => {
@@ -141,7 +148,7 @@ describe('Router tests: ', () => {
             return 'a route'
         });
 
-        let res = await  routes.trigger({
+        let res = await routes.trigger({
             next:   '/a',
             method: 'GET'
         }).unsafeRun();
