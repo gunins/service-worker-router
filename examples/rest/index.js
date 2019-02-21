@@ -9,15 +9,15 @@ import match from '../../src/http/match';
 
 import routes from './rest';
 
-const restPipe = (req, resp) => task({req, resp})
+const app = (req, resp) => task({req, resp})
     .through(pipe(morgan('combined')))
-    .through(pipe(jsonHeader))
     .through(pipe(bodyParser.json()))
+    .through(pipe(jsonHeader))
     .through(match(routes))
     .unsafeRun();
 
 http.createServer((req, resp) => {
-    restPipe(req, resp)
+    app(req, resp)
         .then(body => response(resp, body))
         .catch((error) => notFound(resp, error));
 
