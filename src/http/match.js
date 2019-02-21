@@ -1,6 +1,8 @@
 import {lensPath, view, fromTo} from '../lib/lenses';
-import {compose, curry} from '../lib/curry';
+import {compose} from '../lib/curry';
 import {promiseOption} from '../lib/option';
+import {task} from 'functional/core/Task';
+
 
 const matchLens = view(lensPath('match'));
 const skip = _ => !(matchLens(_) === false);
@@ -22,8 +24,8 @@ const routeData = _ => compose(
     fromTo(bodySet, bodyGet)
 )({}, _);
 
-const routeMatch = curry((router, _) => router
-    .trigger(routeData(_))
-    .map(_ => match(_)));
+const routeMatch = (router) => task(_ => routeData(_))
+    .flatMap(_ => router.trigger(_))
+    .map(_ => match(_));
 
-export {routeMatch}
+export default routeMatch;

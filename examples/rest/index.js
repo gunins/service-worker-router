@@ -1,11 +1,11 @@
-import {task} from 'functional/core/Task';
-import morgan from 'morgan';
 import http from 'http';
+import morgan from 'morgan';
 import bodyParser from 'body-parser'
-import {response, notFound} from '../../src/http/response';
-import {jsonHeader} from '../../src/http/header';
+import {task} from 'functional/core/Task';
 import {pipe} from '../../src/http/pipe';
-import {routeMatch} from '../../src/http/match';
+import {jsonHeader} from '../../src/http/header';
+import {response, notFound} from '../../src/http/response';
+import match from '../../src/http/match';
 
 import routes from './rest';
 
@@ -13,12 +13,12 @@ const restPipe = (req, resp) => task({req, resp})
     .through(pipe(morgan('combined')))
     .through(pipe(jsonHeader))
     .through(pipe(bodyParser.json()))
-    .flatMap(_ => routeMatch(routes, _))
+    .through(match(routes))
     .unsafeRun();
 
 http.createServer((req, resp) => {
     restPipe(req, resp)
         .then(body => response(resp, body))
-        .catch(() => notFound(resp));
+        .catch((error) => notFound(resp, error));
 
 }).listen(5050);
