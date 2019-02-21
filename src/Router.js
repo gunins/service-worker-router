@@ -1,10 +1,12 @@
 import {extractRoute, extractURI} from './utils';
 import {task} from 'functional/core/Task';
 import {option} from './lib/option';
+import {curry} from './lib/curry';
 
 const router = (...args) => new Router(...args);
 
 const {assign} = Object;
+const assignTo = (..._) => assign({}, ..._);
 
 const hasMethod = (matchedMethod, path, {method, pattern}) => method === matchedMethod && pattern(path).match === true;
 const findRoutes = (method, path, _routes) => _routes.find(_ => hasMethod(method, path, _));
@@ -14,7 +16,7 @@ const setScope = (scope) => option()
     .or(hasScope(scope), () => '/' + scope.replace(/^\/|\/$/g, ''))
     .finally(() => '');
 
-const registerRoute = (route, context) => {
+const registerRoute = curry((route, context) => {
     const {[_routes]: routes} = context;
     context[_routes] = [...routes, route];
     return {
@@ -22,6 +24,27 @@ const registerRoute = (route, context) => {
             context[_routes] = routes.filter(_ => route !== _);
         }
     }
+});
+
+const setTask = (_) => _.isTask && _.isTask() ? _ : task(_);
+
+const setRoute = (match, path, query, resp, options, defaults) => {
+    const {routeTask, pattern} = match;
+    const {params, next} = pattern(path);
+    const currentParams = {
+        query,
+        params,
+        next,
+        match: true
+    };
+    const taskParams = assignTo(
+        defaults,
+        options,
+        currentParams
+    );
+    return task(taskParams)
+        .map(req => ({req, resp}))
+        .through(routeTask);
 };
 
 const _getRoute = Symbol('_getRoute');
@@ -57,15 +80,15 @@ class Router {
 
 
     addRequest(path, method, cb) {
-        const {[_scope]: scope} = this;
-        const routeTask = cb.isTask && cb.isTask() ? cb : task(cb);
-        const fullPath = scope + '/' + path.replace(/^\//g, '')
-        const route = {
-            pattern: extractRoute(fullPath),
+        const fullPath = this[_scope] + '/' + path.replace(/^\//g, '');
+        const pattern = extractRoute(fullPath);
+        const routeTask = setTask(cb);
+
+        return registerRoute({
+            pattern,
             method,
             routeTask
-        };
-        return registerRoute(route, this);
+        })(this);
     };
 
 
@@ -75,25 +98,7 @@ class Router {
         const {[_routes]: routes, [_defaults]: defaults} = this;
         const match = findRoutes(method, path, routes);
         return option()
-            .or(match, () => {
-                const {routeTask, pattern} = match;
-                const {params, next} = pattern(path);
-                const currentParams = {
-                    query,
-                    params,
-                    next,
-                    match: true
-                };
-
-                return task(assign(
-                    {},
-                    defaults,
-                    options,
-                    currentParams
-                ))
-                    .map(req => ({req, resp}))
-                    .through(routeTask);
-            })
+            .or(match, () => setRoute(match, path, query, resp, options, defaults))
             .finally(() => task(defaults))
     }
 
