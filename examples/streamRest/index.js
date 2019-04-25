@@ -8,12 +8,13 @@ import {response, notFound} from '../../src/http/response';
 import match from '../../src/http/match';
 
 import routes from './stream';
+import rest from '../rest/rest'
 
 const app = (req, resp) => task({req, resp})
     .through(pipe(morgan('combined')))
     .through(pipe(bodyParser.json()))
     .through(pipe(htmlHeader))
-    .through(match(routes))
+    .through(match(routes, rest))
     .unsafeRun();
 
 http.createServer((req, resp) => {

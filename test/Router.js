@@ -24,6 +24,27 @@ describe('Router tests: ', () => {
         expect(res1).to.be.eql({match: false});
 
     });
+    it('sample copy test', async () => {
+        let routes = router();
+        const {remove} = routes.get('/a', task(a => {
+            return 'a route'
+        }));
+
+        const copyRoutes = routes.copy();
+        let res = await copyRoutes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+        expect(res).to.be.eql('a route');
+        remove();
+
+        let res1 = await routes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+        expect(res1).to.be.eql({match: false});
+
+    });
     it('sample reject test', async () => {
         let cb = spy();
         let routes = router();

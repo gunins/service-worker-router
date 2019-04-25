@@ -637,6 +637,228 @@ const lensPath = (head, ...tail) => ({
     }
 });
 
+const uriParams = {
+    OPTIONAL_PARAM: /\((.*?)\)/g,
+    NAMED_PARAM:    /(\(\?)?:\w+/g,
+    SPLAT_PARAM:    /\*\w+/g,
+    ESCAPE_PARAM:   /[\-{}\[\]+?.,\\\^$|#\s]/g
+};
+
+const parseParams = (value) => {
+    try {
+        return decodeURIComponent(value.replace(/\+/g, ' '));
+    } catch (err) {
+        // Failover to whatever was passed if we get junk data
+        return value;
+    }
+};
+
+const extractQuery = (queryString) => queryString.split('&').map(keyValue => {
+    const [key, value] = keyValue.split(/=(.+)/);
+    return [key, parseParams(value)]
+});
+
+const setQuery = (queryString) => extractQuery(queryString).reduce((query, arg) => {
+    const [name, value] = arg;
+    return Object.assign({}, query, {
+        [name]: (typeof query[name] === 'string') ? [query[name], value] :
+                    (Array.isArray(query[name])) ? query[name].concat([value]) : value
+    });
+}, {});
+
+
+const preparePattern = pattern => {
+    if (pattern === '') {
+        return pattern.replace(/^\(\/\)/g, '').replace(/^\/|$/g, '')
+    } else {
+        const match = pattern.match(/^(\/|\(\/)/g);
+        return match === null ? pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern : pattern;
+    }
+};
+
+const route = (pattern) => {
+    const _route = preparePattern(pattern)
+        .replace(uriParams.ESCAPE_PARAM, '\\$&')
+        .replace(uriParams.OPTIONAL_PARAM, '(?:$1)?')
+        .replace(uriParams.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
+        .replace(uriParams.SPLAT_PARAM, '(.*)');
+
+    return new RegExp('^' + _route);
+};
+
+const extractURI = (location) => {
+    const [path, query] = location.split('?', 2);
+    return {
+        path,
+        query: query ? setQuery(query) : {}
+    }
+};
+
+const hasParam = param => param !== undefined;
+const decodeParams = ([head, ...tail] = []) => tail
+    .reduce((acc, param) => option()
+        .or(hasParam(param), () => [...acc, decodeURIComponent(param)])
+        .finally(() => acc), []);
+
+const paramsInput = view(lensPath('input'));
+const paramsFirst = view(lensPath(0));
+
+const replacePath = _ => (paramsInput(_) || '').replace(paramsFirst(_) || '', '');
+const getNext = (loc, match) => {
+    const params = match.exec(loc);
+    const next = replacePath(params);
+    return {
+        params,
+        next
+    }
+};
+
+const hasNext = ({next}) => (next === '' || next.indexOf('/') === 0);
+const hasMatch = (loc, match) => option()
+    .or(match.test(loc), () => {
+        const next = getNext(loc, match);
+        return hasNext(next) ? next : null
+    })
+    .finally(() => null);
+const nextLink = next => next === '' ? null : next;
+
+const nextLens = lensPath('next');
+const paramsLens = lensPath('params');
+const matchLens$1 = lensPath('match');
+
+const hasRoute = (route) => view(nextLens)(route) !== undefined;
+
+const extractRoute = (pattern) => {
+    const match = route(pattern);
+    return (loc) => {
+        const route = hasMatch(loc, match);
+        return option()
+            .or(hasRoute(route), () => compose(
+                over(paramsLens, decodeParams),
+                over(nextLens, nextLink),
+                set(matchLens$1, true)
+            )(route))
+            .finally(() => compose(
+                set(matchLens$1, false),
+                set(paramsLens, null),
+                set(nextLens, null)
+            )({}));
+    }
+};
+
+const router = (...args) => new Router(...args);
+
+const {assign: assign$4} = Object;
+const assignTo = (..._) => assign$4({}, ..._);
+
+const hasMethod = (matchedMethod, path, {method, pattern}) => method === matchedMethod && pattern(path).match === true;
+const findRoutes = (method, path, _routes) => _routes.find(_ => hasMethod(method, path, _));
+
+const hasScope = (scope) => scope && scope !== '';
+const setScope = (scope) => option()
+    .or(hasScope(scope), () => '/' + scope.replace(/^\/|\/$/g, ''))
+    .finally(() => '');
+
+const registerRoute = curry((route, context) => {
+    const {[_routes]: routes} = context;
+    context[_routes] = [...routes, route];
+    return {
+        remove() {
+            context[_routes] = routes.filter(_ => route !== _);
+        }
+    }
+});
+
+const setTask = (_) => _.isTask && _.isTask() ? _ : task(_);
+
+const setRoute = (match, path, query, resp, options, defaults) => {
+    const {routeTask, pattern} = match;
+    const {params, next} = pattern(path);
+    const currentParams = {
+        query,
+        params,
+        next,
+        match: true
+    };
+    const taskParams = assignTo(
+        defaults,
+        options,
+        currentParams
+    );
+    return task(taskParams)
+        .map(req => ({req, resp}))
+        .through(routeTask);
+};
+
+const _getRoute = Symbol('_getRoute');
+const _routes = Symbol('_routes');
+const _scope = Symbol('_scope');
+const _defaults = Symbol('_defaults');
+
+class Router {
+    constructor(defaults = {}, routes = []) {
+        this[_routes] = routes;
+        const {scope} = defaults;
+        Reflect.deleteProperty(defaults, 'scope');
+        this[_scope] = setScope(scope);
+        this[_defaults] = assign$4({match: false}, defaults);
+
+    };
+
+    get(path, routeTask) {
+        return this.addRequest(path, 'GET', routeTask);
+    };
+
+    post(path, routeTask) {
+        return this.addRequest(path, 'POST', routeTask);
+    };
+
+    delete(path, routeTask) {
+        return this.addRequest(path, 'DELETE', routeTask);
+    };
+
+    put(path, routeTask) {
+        return this.addRequest(path, 'PUT', routeTask);
+    };
+
+    copy() {
+        return router(assign$4({match: false}, this[_defaults]), [...this[_routes]]);
+    }
+
+
+    addRequest(path, method, cb) {
+        const fullPath = this[_scope] + '/' + path.replace(/^\//g, '');
+        const pattern = extractRoute(fullPath);
+        const routeTask = setTask(cb);
+
+        return registerRoute({
+            pattern,
+            method,
+            routeTask
+        })(this);
+    };
+
+
+    [_getRoute](options, resp) {
+        const {next, method} = options;
+        const {query, path} = extractURI(next);
+        const {[_routes]: routes, [_defaults]: defaults} = this;
+        const match = findRoutes(method, path, routes);
+        return option()
+            .or(match, () => setRoute(match, path, query, resp, options, defaults))
+            .finally(() => task(defaults))
+    }
+
+    trigger(options, resp = {}) {
+        return this[_getRoute](options, resp);
+    }
+
+    static merge(head, ...tail) {
+        const routes = [head, ...tail].reduce((acc, router) => [...acc, ...router[_routes]], []);
+        return router(head[_defaults], routes);
+    }
+}
+
 const matchLens = view(lensPath('match'));
 const skip = _ => !(matchLens(_) === false);
 const match = _ => compose(promiseOption, skip)(_).then(() => _);
@@ -661,8 +883,10 @@ const routeData = _ => compose(
 const responseStream = view(lensPath('resp'));
 
 
-const routeMatch = (router) => task()
-    .flatMap(_ => router.trigger(routeData(_), responseStream(_)))
+const routeMatch = (...routers) => task()
+    .flatMap(_ => Router
+        .merge(...routers)
+        .trigger(routeData(_), responseStream(_)))
     .map(_ => match(_));
 
 const lambda$1 = () => {
@@ -1273,219 +1497,6 @@ const writeStream = (instance) => stream(() => writePromise(instance))
 
 const fileReadStream = (src, size) => readStream(fs.createReadStream(src), size);
 
-const uriParams = {
-    OPTIONAL_PARAM: /\((.*?)\)/g,
-    NAMED_PARAM:    /(\(\?)?:\w+/g,
-    SPLAT_PARAM:    /\*\w+/g,
-    ESCAPE_PARAM:   /[\-{}\[\]+?.,\\\^$|#\s]/g
-};
-
-const parseParams = (value) => {
-    try {
-        return decodeURIComponent(value.replace(/\+/g, ' '));
-    } catch (err) {
-        // Failover to whatever was passed if we get junk data
-        return value;
-    }
-};
-
-const extractQuery = (queryString) => queryString.split('&').map(keyValue => {
-    const [key, value] = keyValue.split(/=(.+)/);
-    return [key, parseParams(value)]
-});
-
-const setQuery = (queryString) => extractQuery(queryString).reduce((query, arg) => {
-    const [name, value] = arg;
-    return Object.assign({}, query, {
-        [name]: (typeof query[name] === 'string') ? [query[name], value] :
-                    (Array.isArray(query[name])) ? query[name].concat([value]) : value
-    });
-}, {});
-
-
-const preparePattern = pattern => {
-    if (pattern === '') {
-        return pattern.replace(/^\(\/\)/g, '').replace(/^\/|$/g, '')
-    } else {
-        const match = pattern.match(/^(\/|\(\/)/g);
-        return match === null ? pattern[0] === '(' ? '(/' + pattern.substring(1) : '/' + pattern : pattern;
-    }
-};
-
-const route = (pattern) => {
-    const _route = preparePattern(pattern)
-        .replace(uriParams.ESCAPE_PARAM, '\\$&')
-        .replace(uriParams.OPTIONAL_PARAM, '(?:$1)?')
-        .replace(uriParams.NAMED_PARAM, (match, optional) => optional ? match : '([^\/]+)')
-        .replace(uriParams.SPLAT_PARAM, '(.*)');
-
-    return new RegExp('^' + _route);
-};
-
-const extractURI = (location) => {
-    const [path, query] = location.split('?', 2);
-    return {
-        path,
-        query: query ? setQuery(query) : {}
-    }
-};
-
-const hasParam = param => param !== undefined;
-const decodeParams = ([head, ...tail] = []) => tail
-    .reduce((acc, param) => option()
-        .or(hasParam(param), () => [...acc, decodeURIComponent(param)])
-        .finally(() => acc), []);
-
-const paramsInput = view(lensPath('input'));
-const paramsFirst = view(lensPath(0));
-
-const replacePath = _ => (paramsInput(_) || '').replace(paramsFirst(_) || '', '');
-const getNext = (loc, match) => {
-    const params = match.exec(loc);
-    const next = replacePath(params);
-    return {
-        params,
-        next
-    }
-};
-
-const hasNext = ({next}) => (next === '' || next.indexOf('/') === 0);
-const hasMatch = (loc, match) => option()
-    .or(match.test(loc), () => {
-        const next = getNext(loc, match);
-        return hasNext(next) ? next : null
-    })
-    .finally(() => null);
-const nextLink = next => next === '' ? null : next;
-
-const nextLens = lensPath('next');
-const paramsLens = lensPath('params');
-const matchLens$1 = lensPath('match');
-
-const hasRoute = (route) => view(nextLens)(route) !== undefined;
-
-const extractRoute = (pattern) => {
-    const match = route(pattern);
-    return (loc) => {
-        const route = hasMatch(loc, match);
-        return option()
-            .or(hasRoute(route), () => compose(
-                over(paramsLens, decodeParams),
-                over(nextLens, nextLink),
-                set(matchLens$1, true)
-            )(route))
-            .finally(() => compose(
-                set(matchLens$1, false),
-                set(paramsLens, null),
-                set(nextLens, null)
-            )({}));
-    }
-};
-
-const router = (...args) => new Router(...args);
-
-const {assign: assign$5} = Object;
-const assignTo = (..._) => assign$5({}, ..._);
-
-const hasMethod = (matchedMethod, path, {method, pattern}) => method === matchedMethod && pattern(path).match === true;
-const findRoutes = (method, path, _routes) => _routes.find(_ => hasMethod(method, path, _));
-
-const hasScope = (scope) => scope && scope !== '';
-const setScope = (scope) => option()
-    .or(hasScope(scope), () => '/' + scope.replace(/^\/|\/$/g, ''))
-    .finally(() => '');
-
-const registerRoute = curry((route, context) => {
-    const {[_routes]: routes} = context;
-    context[_routes] = [...routes, route];
-    return {
-        remove() {
-            context[_routes] = routes.filter(_ => route !== _);
-        }
-    }
-});
-
-const setTask = (_) => _.isTask && _.isTask() ? _ : task(_);
-
-const setRoute = (match, path, query, resp, options, defaults) => {
-    const {routeTask, pattern} = match;
-    const {params, next} = pattern(path);
-    const currentParams = {
-        query,
-        params,
-        next,
-        match: true
-    };
-    const taskParams = assignTo(
-        defaults,
-        options,
-        currentParams
-    );
-    return task(taskParams)
-        .map(req => ({req, resp}))
-        .through(routeTask);
-};
-
-const _getRoute = Symbol('_getRoute');
-const _routes = Symbol('_routes');
-const _scope = Symbol('_scope');
-const _defaults = Symbol('_defaults');
-
-class Router {
-    constructor(defaults = {}) {
-        this[_routes] = [];
-        const {scope} = defaults;
-        Reflect.deleteProperty(defaults, 'scope');
-        this[_scope] = setScope(scope);
-        this[_defaults] = assign$5({match: false}, defaults);
-
-    };
-
-    get(path, routeTask) {
-        return this.addRequest(path, 'GET', routeTask);
-    };
-
-    post(path, routeTask) {
-        return this.addRequest(path, 'POST', routeTask);
-    };
-
-    delete(path, routeTask) {
-        return this.addRequest(path, 'DELETE', routeTask);
-    };
-
-    put(path, routeTask) {
-        return this.addRequest(path, 'PUT', routeTask);
-    };
-
-
-    addRequest(path, method, cb) {
-        const fullPath = this[_scope] + '/' + path.replace(/^\//g, '');
-        const pattern = extractRoute(fullPath);
-        const routeTask = setTask(cb);
-
-        return registerRoute({
-            pattern,
-            method,
-            routeTask
-        })(this);
-    };
-
-
-    [_getRoute](options, resp) {
-        const {next, method} = options;
-        const {query, path} = extractURI(next);
-        const {[_routes]: routes, [_defaults]: defaults} = this;
-        const match = findRoutes(method, path, routes);
-        return option()
-            .or(match, () => setRoute(match, path, query, resp, options, defaults))
-            .finally(() => task(defaults))
-    }
-
-    trigger(options, resp = {}) {
-        return this[_getRoute](options, resp);
-    }
-}
-
 const routes = router();
 
 const fileStream = (responseStream) => fileReadStream('/Users/guntarssimanskis/github/router/examples/streamRest/divine-comedy.txt')
@@ -1496,11 +1507,17 @@ const fileStream = (responseStream) => fileReadStream('/Users/guntarssimanskis/g
 // fileStream();
 routes.get('/txt', task(({resp}) => fileStream(resp)));
 
+const routes$2 = router();
+
+routes$2.get('/aaa', task(({req}) => ({response: 'a route', req})));
+routes$2.get('/aab/:a', ({req}) => req);
+routes$2.post('/aab', task(({req}) => req || 'no Body'));
+
 const app = (req, resp) => task({req, resp})
     .through(pipe(morgan('combined')))
     .through(pipe(bodyParser.json()))
     .through(pipe(htmlHeader))
-    .through(routeMatch(routes))
+    .through(routeMatch(routes, routes$2))
     .unsafeRun();
 
 http.createServer((req, resp) => {

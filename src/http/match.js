@@ -2,7 +2,7 @@ import {lensPath, view, fromTo} from '../lib/lenses';
 import {compose} from '../lib/curry';
 import {promiseOption} from '../lib/option';
 import {task} from 'functional/core/Task';
-
+import {Router} from '../Router';
 
 const matchLens = view(lensPath('match'));
 const skip = _ => !(matchLens(_) === false);
@@ -28,8 +28,10 @@ const routeData = _ => compose(
 const responseStream = view(lensPath('resp'));
 
 
-const routeMatch = (router) => task()
-    .flatMap(_ => router.trigger(routeData(_), responseStream(_)))
+const routeMatch = (...routers) => task()
+    .flatMap(_ => Router
+        .merge(...routers)
+        .trigger(routeData(_), responseStream(_)))
     .map(_ => match(_));
 
 export default routeMatch;

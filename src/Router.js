@@ -53,8 +53,8 @@ const _scope = Symbol('_scope');
 const _defaults = Symbol('_defaults');
 
 class Router {
-    constructor(defaults = {}) {
-        this[_routes] = [];
+    constructor(defaults = {}, routes = []) {
+        this[_routes] = routes;
         const {scope} = defaults;
         Reflect.deleteProperty(defaults, 'scope');
         this[_scope] = setScope(scope);
@@ -77,6 +77,10 @@ class Router {
     put(path, routeTask) {
         return this.addRequest(path, 'PUT', routeTask);
     };
+
+    copy() {
+        return router(assign({match: false}, this[_defaults]), [...this[_routes]]);
+    }
 
 
     addRequest(path, method, cb) {
@@ -104,6 +108,11 @@ class Router {
 
     trigger(options, resp = {}) {
         return this[_getRoute](options, resp);
+    }
+
+    static merge(head, ...tail) {
+        const routes = [head, ...tail].reduce((acc, router) => [...acc, ...router[_routes]], []);
+        return router(head[_defaults], routes);
     }
 }
 
