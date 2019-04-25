@@ -1,4 +1,4 @@
-import {router} from '../src/Router';
+import {router, Router} from '../src/Router';
 import {task} from 'functional/core/Task';
 import {expect} from 'chai';
 import {spy} from 'sinon';
@@ -22,6 +22,35 @@ describe('Router tests: ', () => {
             method: 'GET'
         }).unsafeRun();
         expect(res1).to.be.eql({match: false});
+
+    });
+
+    it('sample merge test', async () => {
+        let routeA = router();
+        routeA.get('/a', task(a => {
+            return 'a route'
+        }));
+
+        let routeB = router();
+        routeB.post('/b', task(a => {
+            return 'b route'
+        }));
+
+        let routes =  Router.merge(routeA,routeB);
+
+        let res = await routes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+
+        expect(res).to.be.eql('a route');
+
+        let res1 = await routes.trigger({
+            next:   '/b',
+            method: 'POST'
+        }).unsafeRun();
+
+        expect(res1).to.be.eql('b route');
 
     });
     it('sample copy test', async () => {
