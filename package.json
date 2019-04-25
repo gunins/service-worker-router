@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "body-parser": "^1.18.3",
-        "functional_tasks": "0.0.25",
+        "functional_tasks": "0.1.9",
         "morgan": "^1.9.1"
     },
     "devDependencies": {
@@ -29,7 +29,7 @@
         "mocha": "3.3.0",
         "rollup-plugin-async": "1.2.0",
         "rollup-plugin-force-binding": "1.0.6",
-        "rollup-plugin-includepaths": "0.2.2",
+        "rollup-plugin-includepaths": "0.2.3",
         "rollup-plugin-multi-entry": "2.0.1",
         "rollup-plugin-node-resolve": "3.0.0",
         "rollup-plugin-root-import": "0.2.2",
@@ -41,6 +41,7 @@
     },
     "scripts": {
         "test": "gulp test",
-        "start": "gulp restExample && node ./examples/rest/dist/rest.js"
+        "start": "gulp restExample && node ./examples/rest/dist/rest.js",
+        "startStream": "gulp streamExample && node ./examples/streamRest/dist/stream.js"
     }
 }

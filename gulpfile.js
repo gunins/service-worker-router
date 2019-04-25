@@ -44,6 +44,15 @@ let getFiles = (dir, files_) => {
 
 let excludePaths = getFiles(process.cwd() + '/src');
 
+const Include = {
+    paths:['./node_modules/functional_tasks/src'],
+    extensions: ['.js', '.mjs']
+};
+const binding = [
+    './node_modules/functional_tasks/src/functional/core/Task.mjs',
+    'Task'
+];
+
 // extension for rollup, for executing any file in directory from src
 let rollupStream = (srcDir) => chain((chunk) => {
     let dir        = srcDir[srcDir.length - 1] === '/' ? srcDir.substring(0, srcDir.length - 1) : srcDir,
@@ -51,22 +60,15 @@ let rollupStream = (srcDir) => chain((chunk) => {
         {path}     = chunk,
         moduleName = path.replace(baseDir, ''),
         excluded   = excludePaths.filter(file => file !== path);
+
+
     return rollup({
-                      input:   path,
-                      format:  'cjs',
-                      name:    moduleName,
+        input:   path,
+        format:  'cjs',
+        name:    moduleName,
                       plugins: [
-                          forceBinding([
-                                           './node_modules/functional_tasks/src/functional/core/Task',
-                                           'Task'
-                                       ]),
-                          includePaths({
-                                           include:    {
-                                               'functional/core/Task':   './node_modules/functional_tasks/src/functional/core/Task',
-                                               'functional/async/Fetch': './node_modules/functional_tasks/src/functional/async/Fetch'
-                                           },
-                                           extensions: ['.js']
-                                       })
+                          forceBinding(binding),
+                          includePaths(Include)
                       ],
                   }).pipe(source(moduleName));
 });
@@ -107,20 +109,25 @@ gulp.task('restExample', gulp.series(() => del(['./examples/rest/dist']), () => 
                       name:    'Rest',
                       plugins: [
                           async(),
-                          forceBinding([
-                                           './node_modules/functional_tasks/src/functional/core/Task',
-                                           'Task'
-                                       ]),
-                          includePaths({
-                                           include:    {
-                                               'functional/core/Task':   './node_modules/functional_tasks/src/functional/core/Task',
-                                               'functional/async/Fetch': './node_modules/functional_tasks/src/functional/async/Fetch'
-                                           },
-                                           extensions: ['.js']
-                                       })
+                          forceBinding(binding),
+                          includePaths(Include)
                       ]
                   }).pipe(source('rest.js'))
         .pipe(gulp.dest('./examples/rest/dist'));
+}));
+
+gulp.task('streamExample', gulp.series(() => del(['./examples/streamRest/dist']), () => {
+    return rollup({
+                      input:   './examples/streamRest/index.js',
+                      format:  'cjs',
+                      name:    'Rest',
+                      plugins: [
+                          async(),
+                          forceBinding(binding),
+                          includePaths(Include)
+                      ]
+                  }).pipe(source('stream.js'))
+        .pipe(gulp.dest('./examples/streamRest/dist'));
 }));
 
 gulp.task('rollupTest', () => {

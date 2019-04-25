@@ -1,18 +1,19 @@
-const NOT_FOUND = (error) => ({
-    status: 'error',
-    message:  error || 'Not Found'
+import {option} from '../lib/option';
+
+const {assign} = Object;
+const NOT_FOUND = (error) => JSON.stringify({
+    status:  'error',
+    message: error || 'Not Found'
 });
 
-const response = (response, body) => {
-    response.write(JSON.stringify(body));
-    response.end();
-};
+const STREAM_END = Symbol('STREAM_END');
+const hasData = (_) => _ !== STREAM_END;
 
-const notFound = (response, error) => {
-    const message = NOT_FOUND(error);
-    response.statusCode = 404;
-    response.write(JSON.stringify(message));
-    response.end();
-};
+const response = (response, body) => option()
+    .or(hasData(body), () => response.end(JSON.stringify(body)))
+    .finally(() => null);
 
-export {response, notFound}
+const notFound = (response, error) => assign(response, {statusCode: 404})
+    .end(NOT_FOUND(error));
+
+export {response, notFound, STREAM_END}

@@ -8,15 +8,16 @@ const matchLens = view(lensPath('match'));
 const skip = _ => !(matchLens(_) === false);
 const match = _ => compose(promiseOption, skip)(_).then(() => _);
 
-//Getters fro request object
+//Getters from request object Nodejs http module
 const urlGet = lensPath('req', 'url');
 const methodGet = lensPath('req', 'method');
 const bodyGet = lensPath('req', 'body');
 
-//Setters response to Router
+//Setters request to Router
 const nextSet = lensPath('next');
 const methodSet = lensPath('method');
 const bodySet = lensPath('body');
+
 
 const routeData = _ => compose(
     fromTo(nextSet, urlGet),
@@ -24,8 +25,11 @@ const routeData = _ => compose(
     fromTo(bodySet, bodyGet)
 )({}, _);
 
-const routeMatch = (router) => task(_ => routeData(_))
-    .flatMap(_ => router.trigger(_))
+const responseStream = view(lensPath('resp'));
+
+
+const routeMatch = (router) => task()
+    .flatMap(_ => router.trigger(routeData(_), responseStream(_)))
     .map(_ => match(_));
 
 export default routeMatch;

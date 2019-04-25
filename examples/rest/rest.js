@@ -3,8 +3,8 @@ import {router} from '../../src/Router';
 
 const routes = router();
 
-routes.get('/aaa', task(_ => ({response: 'a route', _})));
-routes.get('/aab/:a', _ => _);
-routes.post('/aab', task((_) => _ || 'no Body'));
+routes.get('/aaa', task(({req}) => ({response: 'a route', req})));
+routes.get('/aab/:a', ({req}) => req);
+routes.post('/aab', task(({req}) => req || 'no Body'));
 
 export default routes
