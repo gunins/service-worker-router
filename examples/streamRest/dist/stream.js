@@ -1499,7 +1499,7 @@ const fileReadStream = (src, size) => readStream(fs.createReadStream(src), size)
 
 const routes = router();
 
-const fileStream = (responseStream) => fileReadStream('/Users/guntarssimanskis/github/router/examples/streamRest/divine-comedy.txt')
+const fileStream = (responseStream) => fileReadStream('./examples/streamRest/divine-comedy.txt')
     .through(writeStream(responseStream))
     .run()
     .then(() => STREAM_END);
