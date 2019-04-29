@@ -21,10 +21,16 @@ const registerRoute = curry((route, context) => {
     context[_routes] = [...routes, route];
     return {
         remove() {
-            context[_routes] = routes.filter(_ => route !== _);
+            context[_routes] = context[_routes].filter(_ => route !== _);
+        },
+        route() {
+            return route;
         }
     }
 });
+
+const hasRoute = (route) => route && route.route;
+const getRoute = (route) => option().or(hasRoute(route), () => route.route()).finally(() => route);
 
 const setTask = (_) => _.isTask && _.isTask() ? _ : task(_);
 
@@ -81,6 +87,15 @@ class Router {
     copy() {
         return router(assign({match: false}, this[_defaults]), [...this[_routes]]);
     }
+
+    removeRoute(route) {
+        const target = getRoute(route);
+        this[_routes] = this[_routes].filter(_ => target !== _);
+    };
+
+    RemoveAll() {
+        this[_routes] = [];
+    };
 
 
     addRequest(path, method, cb) {

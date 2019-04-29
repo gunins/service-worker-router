@@ -53,6 +53,51 @@ describe('Router tests: ', () => {
         expect(res1).to.be.eql('b route');
 
     });
+    it('sample merge removeROUTE test', async () => {
+        let routeA = router();
+        routeA.get('/a', task(a => {
+            return 'a route'
+        }));
+
+        let routeB = router();
+        let roteBPost = routeB.post('/b', task(a => {
+            return 'b route'
+        }));
+
+        let routes =  Router.merge(routeA,routeB);
+
+        let res = await routes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+
+        expect(res).to.be.eql('a route');
+
+        let res1 = await routes.trigger({
+            next:   '/b',
+            method: 'POST'
+        }).unsafeRun();
+
+        expect(res1).to.be.eql('b route');
+
+        routes.removeRoute(roteBPost);
+
+        let res3 = await routes.trigger({
+            next:   '/a',
+            method: 'GET'
+        }).unsafeRun();
+
+        expect(res3).to.be.eql('a route');
+
+        let res2 = await routes.trigger({
+            next:   '/b',
+            method: 'POST'
+        }).unsafeRun();
+
+        expect(res2).to.be.eql({ match: false });
+
+    });
+
     it('sample copy test', async () => {
         let routes = router();
         const {remove} = routes.get('/a', task(a => {
