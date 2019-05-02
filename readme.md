@@ -22,12 +22,12 @@ Router subscribe to method get and return value.
 import {router} from '../src/Router';
 import {task} from 'functional/core/Task';
 
-        let routes = router();
+        const routes = router();
         routes.get('/a', () => {
             return 'a route'
         });
 
-        let res = await  routes.trigger({
+        const res = await  routes.trigger({
         //next is uri you want to trigger on router/
             next:   '/a',
             method: 'GET'
@@ -43,7 +43,7 @@ Router subscribe to method and taking params
 import {router} from '../src/Router';
 import {task} from 'functional/core/Task';
 
-        let routes = router();
+        const routes = router();
         routes.get('/:a/:b', a => {
            //  a.params =['a','b'];
            
@@ -63,17 +63,17 @@ Router subscribe, and taking nested routes.
 import {router} from 'functional-router';
 import {task} from 'functional/core/Task';
 
-        let route = router();
+        const route = router();
 
-        let taskB = task(b =>  b.params.concat(b.a));
+        const taskB = task(b =>  b.params.concat(b.a));
 
 
         route.get('/:a', task(a => {
-             let {params, next, method} = a;
+             const {params, next, method} = a;
              return {params, next, method}
          }).flatMap(data => {
              // trigger some nested routes useful if want to render /table or /chart with same data
-             let route = router({a: data.params});
+             const route = router({a: data.params});
              route.get('/:b', taskB);
              return route.trigger(data);
          }));
