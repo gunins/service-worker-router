@@ -2,7 +2,7 @@
 
 
 Nodejs Server side and `Service Worker` lazy router. Difference from client, client routers can take same route on multiple locations on page. 
-Because this router we will use in Server side and service workers. We need to handle it outside from express app.
+Because this router we will use in Server side and service workers. We need to handle it outside from express or any other http app.
 
 Router taking static routes like `/a/b/c`, also dynamic `/a/:b/:c` dynamic part will return `data=>data.params` in same order.
 
@@ -60,7 +60,7 @@ import {task} from 'functional/core/Task';
 Router subscribe, and taking nested routes.
 
 ```javascript
-import {router} from '../src/Router';
+import {router} from 'functional-router';
 import {task} from 'functional/core/Task';
 
         let route = router();
@@ -88,3 +88,116 @@ import {task} from 'functional/core/Task';
         .then(/*success promise*/);
 
 ```
+
+### Full Example for Nodejs http library
+
+Defining routes similar like another router libraries. File called `rest.js`
+
+```javascript
+
+import {task} from 'functional_tasks';
+import {router} from 'functional-router';
+
+const routes = router();
+
+routes.get('/aaa', task(({req}) => ({response: 'a route', req})));
+routes.get('/aab/:a', ({req}) => req);
+routes.post('/aab', task(({req}) => req || 'no Body'));
+
+export default routes
+
+```
+
+Adding routes in app.
+
+```javascript
+
+    import http from 'http';
+    import morgan from 'morgan';
+    import bodyParser from 'body-parser'
+    import {task} from 'functional/core/Task';
+    import {pipe, jsonHeader, response, notFound, match} from 'functional-router';
+    
+    import routes from './rest';
+    
+    const app = (req, resp) => task({req, resp})
+        .through(pipe(morgan('combined')))
+        .through(pipe(bodyParser.json()))
+        .through(pipe(jsonHeader))
+        .through(match(routes))
+        .unsafeRun();
+    
+    http.createServer((req, resp) => {
+        app(req, resp)
+            .then(body => response(resp, body))
+            .catch((error) => notFound(resp, error));
+    
+    }).listen(5050);
+
+```
+
+As you see, all plugins are compatible.
+
+Also you can stream data.
+
+```javascript
+    import {task, fileReadStream, writeStream} from 'functional_tasks';
+    import {router, STREAM_END} from 'functional-router';
+    
+    const routes = router();
+    
+    const fileStream = (responseStream) => fileReadStream('./examples/streamRest/divine-comedy.txt')
+        .through(writeStream(responseStream))
+        .run()
+        .then(() => STREAM_END);
+    
+    // fileStream();
+    routes.get('/txt', task(({resp}) => fileStream(resp)));
+    
+    
+    export default routes
+
+```
+
+There you hook in to stream, and returning, `STREM_END` flag, which notify router, stream is closed.
+
+App will look same from above.
+
+```javascript
+
+    import http from 'http';
+    import morgan from 'morgan';
+    import bodyParser from 'body-parser'
+    import {task} from 'functional_tasks';
+    import {pipe, htmlHeader, response, notFound, match} from 'functional-router';
+    
+    import routes from './stream';
+    
+    const app = (req, resp) => task({req, resp})
+        .through(pipe(morgan('combined')))
+        .through(pipe(bodyParser.json()))
+        .through(pipe(htmlHeader))
+        .through(match(routes))
+        .unsafeRun();
+    
+    http.createServer((req, resp) => {
+        app(req, resp)
+            .then(body => response(resp, body))
+            .catch((error) => notFound(resp, error));
+    
+    }).listen(5060);
+
+```
+
+`match` method support multiple routers, for example.
+
+```javascript
+    import streamData from './stream';
+    import rest from '../rest/rest'
+    
+    ...
+        .through(match(streamData, rest))
+    ...
+
+```
+
