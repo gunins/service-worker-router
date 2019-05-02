@@ -201,3 +201,4 @@ App will look same from above.
 
 ```
 
+See live example in `examples` folder.
