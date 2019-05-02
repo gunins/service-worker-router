@@ -69,14 +69,14 @@ import {task} from 'functional/core/Task';
 
 
         route.get('/:a', task(a => {
-                                     let {params, next, method} = a;
-                                     return {params, next, method}
-                                 }).flatMap(data => {
-                                     // trigger some nested routes useful if want to render /table or /chart with same data
-                                     let route = router({a: data.params});
-                                     route.get('/:b', taskB);
-                                     return route.trigger(data);
-                                 }));
+             let {params, next, method} = a;
+             return {params, next, method}
+         }).flatMap(data => {
+             // trigger some nested routes useful if want to render /table or /chart with same data
+             let route = router({a: data.params});
+             route.get('/:b', taskB);
+             return route.trigger(data);
+         }));
 
        route.trigger({
             next:   '/a/b',
