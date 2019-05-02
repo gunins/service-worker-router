@@ -726,14 +726,14 @@ const nextLens = lensPath('next');
 const paramsLens = lensPath('params');
 const matchLens$1 = lensPath('match');
 
-const hasRoute = (route) => view(nextLens)(route) !== undefined;
+const hasRoute$1 = (route) => view(nextLens)(route) !== undefined;
 
 const extractRoute = (pattern) => {
     const match = route(pattern);
     return (loc) => {
         const route = hasMatch(loc, match);
         return option()
-            .or(hasRoute(route), () => compose(
+            .or(hasRoute$1(route), () => compose(
                 over(paramsLens, decodeParams),
                 over(nextLens, nextLink),
                 set(matchLens$1, true)
@@ -764,10 +764,16 @@ const registerRoute = curry((route, context) => {
     context[_routes] = [...routes, route];
     return {
         remove() {
-            context[_routes] = routes.filter(_ => route !== _);
+            context[_routes] = context[_routes].filter(_ => route !== _);
+        },
+        route() {
+            return route;
         }
     }
 });
+
+const hasRoute = (route) => route && route.route;
+const getRoute = (route) => option().or(hasRoute(route), () => route.route()).finally(() => route);
 
 const setTask = (_) => _.isTask && _.isTask() ? _ : task(_);
 
@@ -824,6 +830,15 @@ class Router {
     copy() {
         return router(assign$4({match: false}, this[_defaults]), [...this[_routes]]);
     }
+
+    removeRoute(route) {
+        const target = getRoute(route);
+        this[_routes] = this[_routes].filter(_ => target !== _);
+    };
+
+    RemoveAll() {
+        this[_routes] = [];
+    };
 
 
     addRequest(path, method, cb) {

@@ -1,6 +1,6 @@
 {
     "name": "functional-router",
-    "version": "0.0.12",
+    "version": "0.0.11",
     "description": "Nodejs Server side and Service Worker lazy router.",
     "repository": {
         "type": "git",
@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "body-parser": "^1.18.3",
-        "functional_tasks": "0.1.9",
+        "functional_tasks": "0.1.10",
         "morgan": "^1.9.1"
     },
     "devDependencies": {
