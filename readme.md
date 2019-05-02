@@ -60,32 +60,32 @@ import {task} from 'functional/core/Task';
 Router subscribe, and taking nested routes.
 
 ```javascript
-import {router} from 'functional-router';
-import {task} from 'functional/core/Task';
+    import {router} from 'functional-router';
+    import {task} from 'functional/core/Task';
 
-        const route = router();
+    const route = router();
 
-        const taskB = task(b =>  b.params.concat(b.a));
+    const taskB = task(b =>  b.params.concat(b.a));
 
 
-        route.get('/:a', task(a => {
-             const {params, next, method} = a;
-             return {params, next, method}
-         }).flatMap(data => {
-             // trigger some nested routes useful if want to render /table or /chart with same data
-             const route = router({a: data.params});
-             route.get('/:b', taskB);
-             return route.trigger(data);
-         }));
+    route.get('/:a', task(a => {
+         const {params, next, method} = a;
+         return {params, next, method}
+     }).flatMap(data => {
+         // trigger some nested routes useful if want to render /table or /chart with same data
+         const route = router({a: data.params});
+         route.get('/:b', taskB);
+         return route.trigger(data);
+     }));
 
-       route.trigger({
-            next:   '/a/b',
-            method: 'GET'
-        })
-        // doing some extra general conversion  
-        .map(data=>data.join(','))
-        .unsafeRun()
-        .then(/*success promise*/);
+     route.trigger({
+        next:   '/a/b',
+        method: 'GET'
+     })
+     // doing some extra general conversion  
+     .map(data=>data.join(','))
+     .unsafeRun()
+     .then(/*success promise*/);
 
 ```
 
