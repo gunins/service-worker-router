@@ -81,7 +81,7 @@ Router subscribe, and taking nested routes.
      route.trigger({
         next:   '/a/b',
         method: 'GET'
-     })
+     });
      // doing some extra general conversion  
      .map(data=>data.join(','))
      .unsafeRun()

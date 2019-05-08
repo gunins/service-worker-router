@@ -17,9 +17,13 @@ const app = (req, resp) => task({req, resp})
     .through(match(routes, rest))
     .unsafeRun();
 
-http.createServer((req, resp) => {
+const srv = http.createServer((req, resp) => {
     app(req, resp)
         .then(body => response(resp, body))
         .catch((error) => notFound(resp, error));
 
-}).listen(5060);
+})
+    .listen(5060, () => {
+        const {port} = srv.address();
+        console.log(`Server Listening on Port ${port} http://localhost:${port}/txt`);
+    });
