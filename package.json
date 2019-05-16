@@ -8,7 +8,7 @@
     },
     "dependencies": {
         "body-parser": "^1.18.3",
-        "functional_tasks": "0.1.10",
+        "functional_tasks": "0.1.11",
         "gulp-replace": "^1.0.0",
         "morgan": "^1.9.1"
     },

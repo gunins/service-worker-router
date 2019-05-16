@@ -1542,7 +1542,6 @@ const srv = http.createServer((req, resp) => {
 
 })
     .listen(5060, () => {
-        const port = srv.address().port;
-        console.log(srv.address());
+        const {port} = srv.address();
         console.log(`Server Listening on Port ${port} http://localhost:${port}/txt`);
     });
