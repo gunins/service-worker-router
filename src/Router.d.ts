@@ -1,4 +1,4 @@
-import {Task} from 'functional_tasks';
+import {Task} from 'functional_tasks/src/functional/core/Task';
 
 declare enum eMethod {
     GET = 'GET',
