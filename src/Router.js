@@ -1,5 +1,5 @@
 import {extractRoute, extractURI} from './utils';
-import {task} from 'functional/core/Task';
+import {task} from 'functional_tasks';
 import {option} from './lib/option';
 import {curry} from './lib/curry';
 

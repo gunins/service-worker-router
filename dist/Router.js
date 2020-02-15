@@ -1,8 +1,8 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('./utils'), require('functional/core/Task'), require('./lib/option'), require('./lib/curry')) :
-	typeof define === 'function' && define.amd ? define(['exports', './utils', 'functional/core/Task', './lib/option', './lib/curry'], factory) :
-	(factory((global.Router = global.Router || {}, global.Router.js = {}),global.utils_js,global.Task,global.option_js,global.curry_js));
-}(this, (function (exports,utils_js,Task,option_js,curry_js) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('./utils'), require('functional_tasks'), require('./lib/option'), require('./lib/curry')) :
+	typeof define === 'function' && define.amd ? define(['exports', './utils', 'functional_tasks', './lib/option', './lib/curry'], factory) :
+	(factory((global.Router = global.Router || {}, global.Router.js = {}),global.utils_js,global.functional_tasks,global.option_js,global.curry_js));
+}(this, (function (exports,utils_js,functional_tasks,option_js,curry_js) { 'use strict';
 
 const router = (...args) => new Router(...args);
 
@@ -33,7 +33,7 @@ const registerRoute = curry_js.curry((route, context) => {
 const hasRoute = (route) => route && route.route;
 const getRoute = (route) => option_js.option().or(hasRoute(route), () => route.route()).finally(() => route);
 
-const setTask = (_) => _.isTask && _.isTask() ? _ : Task.task(_);
+const setTask = (_) => _.isTask && _.isTask() ? _ : functional_tasks.task(_);
 
 const setRoute = (match, path, query, resp, options, defaults) => {
     const {routeTask, pattern} = match;
@@ -49,7 +49,7 @@ const setRoute = (match, path, query, resp, options, defaults) => {
         options,
         currentParams
     );
-    return Task.task(taskParams)
+    return functional_tasks.task(taskParams)
         .map(req => ({req, resp}))
         .through(routeTask);
 };
@@ -119,7 +119,7 @@ class Router {
         const match = findRoutes(method, path, routes);
         return option_js.option()
             .or(match, () => setRoute(match, path, query, resp, options, defaults))
-            .finally(() => Task.task(defaults))
+            .finally(() => functional_tasks.task(defaults))
     }
 
     trigger(options, resp = {}) {

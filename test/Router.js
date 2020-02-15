@@ -1,5 +1,5 @@
 import {router, Router} from '../src/Router';
-import {task} from 'functional/core/Task';
+import {task} from 'functional_tasks';
 import {expect} from 'chai';
 import {spy} from 'sinon';
 

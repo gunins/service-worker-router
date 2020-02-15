@@ -9,7 +9,7 @@
     "dependencies": {
         "@types/node": "^12.0.2",
         "body-parser": "^1.18.3",
-        "functional_tasks": "0.1.11",
+        "functional_tasks": "0.1.14",
         "gulp-replace": "^1.0.0",
         "morgan": "^1.9.1"
     },
