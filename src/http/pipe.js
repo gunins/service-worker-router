@@ -1,4 +1,4 @@
-import {task} from 'functional/core/Task';
+import {task} from 'functional_tasks';
 import {option} from '../lib/option';
 
 const pipe = middleWare => task(({req, resp}, resolve, reject) => {

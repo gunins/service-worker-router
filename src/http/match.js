@@ -1,7 +1,7 @@
 import {lensPath, view, fromTo} from '../lib/lenses';
 import {compose} from '../lib/curry';
 import {promiseOption} from '../lib/option';
-import {task} from 'functional/core/Task';
+import {task} from 'functional_tasks';
 import {Router} from '../Router';
 
 const matchLens = view(lensPath('match'));
