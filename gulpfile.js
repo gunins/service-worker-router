@@ -182,13 +182,13 @@ gulp.task('bump:patch', () => inc('patch'));
 gulp.task('bump:feature', () => inc('minor'));
 gulp.task('bump:release', () => inc('major'));
 
-gulp.task('pushTags', gulp.series('test', 'bump:patch', (cb) => {
+gulp.task('pushTags', gulp.series('test', 'bump:patch'/*, (cb) => {
     exec('git push --tags', (err, stdout, stderr) => {
         console.log(stdout);
         console.log(stderr);
         cb(err);
     });
-}));
+}*/));
 
 gulp.task('publish', gulp.series('pushTags', (cb) => {
     exec('npm publish ./', (err, stdout, stderr) => {
