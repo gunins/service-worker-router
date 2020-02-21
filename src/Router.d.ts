@@ -44,4 +44,4 @@ export class Router<A> {
     static merge<B>(head: Router<B>, ...tail: Router<B>[]): Router<B>
 }
 
-export function router<A>(defaults: A, routes?: any[]): Router<A>
+export function router<A>(defaults?: A, routes?: any[]): Router<A>
