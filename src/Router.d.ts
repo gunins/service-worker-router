@@ -20,8 +20,8 @@ interface Iroute<A> {
 }
 
 
-export class Router<A> {
-    constructor(defaults?: A, routes?: any[])
+export class Router<A, B> {
+    constructor(defaults?: B, routes?: any[])
 
     get(path: string, routeTask: Task<A>): Iroute<A>;
 
@@ -31,7 +31,7 @@ export class Router<A> {
 
     put(path: string, routeTask: Task<A>): Iroute<A>;
 
-    copy(): Router<A>;
+    copy(): Router<A, B>;
 
     removeRoute(route: Iroute<A>): void;
 
@@ -41,7 +41,7 @@ export class Router<A> {
 
     trigger<B, C>(options: B, resp: C): Task<A>
 
-    static merge<B>(head: Router<B>, ...tail: Router<B>[]): Router<B>
+    static merge<B, C>(head: Router<B, C>, ...tail: Router<B, C>[]): Router<B, C>
 }
 
-export function router<A>(defaults?: A, routes?: any[]): Router<A>
+export function router<A, B>(defaults?: B, routes?: any[]): Router<A, B>
