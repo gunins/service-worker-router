@@ -21,7 +21,7 @@ interface Iroute<A> {
 
 
 export class Router<A> {
-    constructor(defaults: A, routes?: any[])
+    constructor(defaults?: A, routes?: any[])
 
     get(path: string, routeTask: Task<A>): Iroute<A>;
 
