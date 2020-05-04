@@ -148,6 +148,20 @@ gulp.task('streamExample', gulp.series(() => del(['./examples/streamRest/dist'])
         .pipe(gulp.dest('./examples/streamRest/dist'));
 }));
 
+gulp.task('staticStreamExample', gulp.series(() => del(['./examples/static/dist']), () => {
+    return rollup({
+        input:   './examples/static/index.js',
+        format:  'cjs',
+        name:    'Rest',
+        plugins: [
+            async(),
+            forceBinding(binding),
+            includePaths(Include)
+        ]
+    }).pipe(source('index.js'))
+        .pipe(gulp.dest('./examples/static/dist'));
+}));
+
 gulp.task('rollupTest', () => {
     return gulp.src('./test/**/*.js', {read: false})
         .pipe(rollupStreamTest('/test/'))
