@@ -11,6 +11,11 @@ Router taking static routes like `/a/b/c`, also dynamic `/a/:b/:c` dynamic part 
 
 Router willl trigger only first match routes.
 
+### Installation
+
+```bash
+    npm i functional-router
+```
 
 ### Examples 
 
@@ -19,8 +24,8 @@ In general, router working with [tasks](https://github.com/gunins/functional) an
 Router subscribe to method get and return value.
 
 ```javascript
-import {router} from '../src/Router';
-import {task} from 'functional/core/Task';
+import {router} from 'functional-router';
+import {task} from 'functional_tasks';
 
         const routes = router();
         routes.get('/a', () => {
@@ -40,8 +45,8 @@ import {task} from 'functional/core/Task';
 Router subscribe to method and taking params
 
 ```javascript
-import {router} from '../src/Router';
-import {task} from 'functional/core/Task';
+import {router} from 'functional-router';
+import {task} from 'functional_tasks';
 
         const routes = router();
         routes.get('/:a/:b', a => {
@@ -61,7 +66,7 @@ Router subscribe, and taking nested routes.
 
 ```javascript
     import {router} from 'functional-router';
-    import {task} from 'functional/core/Task';
+    import {task} from 'functional_tasks';
 
     const route = router();
 
@@ -115,7 +120,7 @@ Adding routes in app.
     import http from 'http';
     import morgan from 'morgan';
     import bodyParser from 'body-parser'
-    import {task} from 'functional/core/Task';
+    import {task} from 'functional_tasks';
     import {pipe, jsonHeader, response, notFound, match} from 'functional-router';
     
     import routes from './rest';
