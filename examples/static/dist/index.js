@@ -1,7 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
-
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var http = _interopDefault(require('http'));
@@ -59,19 +57,17 @@ const NotFoundResponse = (response) => {
     response.end(htmlResponse);
 };
 
-const testIfGetMethod =({method}) => method === 'GET' ? Promise.resolve() : Promise.reject();
+const testIfGetMethod = ({method}) => method === 'GET' ? Promise.resolve() : Promise.reject();
 
-const StaticFilesServer = (req, resp) =>
+
+const port = 8080;
+
+http.createServer((req, resp) => {
+
     testIfGetMethod(req)
         .then(() => staticServer(req, resp, {directory: 'files'}))
         .catch(() => NotFoundResponse(resp));
 
-const port = 8080;
-
-http
-    .createServer(StaticFilesServer)
-    .listen(port, () => {
-        console.log('app listening on port', port);
-    });
-
-exports.StaticFilesServer = StaticFilesServer;
+}).listen(port, () => {
+    console.log('app listening on port', port);
+});
