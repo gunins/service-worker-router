@@ -3,37 +3,39 @@
 ## Introduction
 
 In my previous post I gave overview picture about streams, and my library [https://github.com/gunins/functional](https://github.com/gunins/functional).
-To continue topic will create static file server, and show how easy is work with streams.
-Before start will need to install `functional_tasks` again.
+To continue streams topic with some real world example, let's create static file server using streams.
+Before start need to install dependency `functional_tasks`.
 
 ```bash
  npm i functional_tasks
 ```
 
-Like I mention in previous topic streams are memory efficient, and for static files is very useful, because some files can be very large.
-Also, I have to say this tutorial is just proof of concept, I tried to make as small as possible. To make in production, 
-will need more error catching. For Typescript users, properly define types.
+Like I mention in the previous topic, streams are memory efficient. Because static files can be any size, using streams is very useful, to avoid memory failures.
+Also, this tutorial is just proof of concept, I tried to make as simple as possible. To make in production, 
+will need more error catching and more file extension type support. For Typescript users, need to define types.
 
 ## What we need
 
-Ok, there is list of components, what we need for static server.
+There is list of components, what we need for a static server.
 
 - http module to handling http requests.
 - fs module to working with files.
 - File extension map to handle response content headers.
-- And of course stream modules from `functional_tasks` package.
+- Stream module from `functional_tasks` package.
 
 ## Example
 
-There is step by step what we will do.
+Step by step what we will do.
 
 - Extract file path from `http.IncommingMessage`
-- Check if file Exists.
-- Return httpStream on response, with correct content Header.
-- Last will handle if file not exists, return Not Found response.
+- Check if file Exists in target directory.
+- read stream from file system and write to httpStream on response.
+- Return Not Found response, if file not exist.
 
-First we create FileMap.js, there will be binding to file extension. Like I mention at the beginning, this file 
-not cover all types.
+#### Step One
+
+Create FileMap.js, there is correct header mapping to the file extension. Like I mention at the beginning, 
+there not have all file types.
 
 ```javascript
 export const FileMap = {
@@ -52,8 +54,7 @@ export const FileMap = {
 };
 ```
 
-Since we have FileMap, we can start implement application logic.
-
+#### Step Two
 First we need resolve and fix pathName. If pathname not defined, will bind to `index.html`. 
 `parsedUrl` is Nodejs [`Url`](https://nodejs.org/api/url.html#url_class_url) module.
 
@@ -67,7 +68,9 @@ const setPathName = (parsedUrl, {directory}) =>
 
 ```
 
-Next we need to extract pathName from request [`IncommingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage).
+#### Step Three
+
+Need to extract pathName from request [`IncommingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage).
 
 ```javascript
 import {parse} from 'url';
@@ -78,7 +81,9 @@ const parsedUrl = ({url}, options) =>{
 }
 ```
 
-Now another step, we need to check if file from a requested path exist.
+#### Step Four
+
+Need to check if file from a requested path exist.
 
 ```javascript
 
@@ -86,6 +91,8 @@ import fs from 'fs';
 const fileExist = (pathname) => fs.existsSync(pathname);
 
 ```
+
+#### Step Five
 
 Now time to use streams.
 
@@ -114,7 +121,9 @@ const successDataResponse = (pathname, res) => {
 We convert response stream to `functional_tasks` compatible `const responseStream = writeStream(res);` and run it. 
 When it finishes, will return Promise.
 
-On more step, need run stream only if file exists.
+#### Step Six
+
+Only if file exists, we run stream.
 
 ```javascript
 
@@ -122,7 +131,9 @@ const fileResponse = async (res, pathname) => fileExist(pathname) ? successDataR
 
 ``` 
 
-Last step listen on httpServer.
+#### Step Seven
+
+Listen on httpServer.
 
 ```javascript
 
@@ -176,7 +187,9 @@ export const staticServer = (req, res, options) => {
 
 ```  
 
-Now, because we have to handle Not found if file not exists, here is file `NotFoundResponsejs`
+#### Step Eight
+
+Handle "Not found" if file not exists, here is file `NotFoundResponsejs`
 
 ```javascript
 
@@ -194,7 +207,9 @@ export const NotFoundResponse = (response) => {
 
 This part just return "Resource Not Found" html response, with Not Found `statusCode`.
 
-One more step, need to check, if request method is `GET`, for any other requests, will be not found.
+#### Step Nine
+
+Need to check, if request method is `GET`, for any other requests, will be not found.
 `testifGetMethod` will return `Promise`. 
 
 ```javascript
@@ -203,7 +218,9 @@ const testIfGetMethod =({method}) => method === 'GET' ? Promise.resolve() : Prom
 
 ``` 
 
-And there http Server, to listen incoming requests.
+#### Step Ten
+
+Http Server, to listen incoming requests.
 
 ```javascript
 
