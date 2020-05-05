@@ -55,7 +55,8 @@ export const FileMap = {
 ```
 
 #### Step Two
-First we need resolve and fix pathName. If pathname not defined, will bind to `index.html`. 
+
+Resolve and fix pathName. If pathname not defined, will bind to `index.html`. 
 `parsedUrl` is Nodejs [`Url`](https://nodejs.org/api/url.html#url_class_url) module.
 
 
@@ -70,7 +71,7 @@ const setPathName = (parsedUrl, {directory}) =>
 
 #### Step Three
 
-Need to extract pathName from request [`IncommingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage).
+Extract pathName from request [`IncommingMessage`](https://nodejs.org/api/http.html#http_class_http_incomingmessage).
 
 ```javascript
 import {parse} from 'url';
@@ -83,7 +84,7 @@ const parsedUrl = ({url}, options) =>{
 
 #### Step Four
 
-Need to check if file from a requested path exist.
+Check if file from a requested path exist.
 
 ```javascript
 
@@ -118,8 +119,8 @@ const successDataResponse = (pathname, res) => {
 
 ```
 
-We convert response stream to `functional_tasks` compatible `const responseStream = writeStream(res);` and run it. 
-When it finishes, will return Promise.
+I convert response stream to `functional_tasks` compatible `const responseStream = writeStream(res);` and run it. 
+When stream finishes, will return Promise fulfilled.
 
 #### Step Six
 
@@ -205,12 +206,12 @@ export const NotFoundResponse = (response) => {
 
 ``` 
 
-This part just return "Resource Not Found" html response, with Not Found `statusCode`.
+This part return "Resource Not Found" html response, with Not Found `statusCode`.
 
 #### Step Nine
 
-Need to check, if request method is `GET`, for any other requests, will be not found.
-`testifGetMethod` will return `Promise`. 
+Check, if request method is `GET`, for any other requests, will be not found.
+`testifGetMethod` will return `Promise` resolve on success, reject if different method than `GET`. 
 
 ```javascript
 
@@ -244,6 +245,7 @@ http.createServer((req, resp) => {
 
 ```
 
+That's it, now we have fully working static file server.
 
 Full example can find in github here [https://github.com/gunins/service-worker-router/tree/master/examples/static](https://github.com/gunins/service-worker-router/tree/master/examples/static)
 
