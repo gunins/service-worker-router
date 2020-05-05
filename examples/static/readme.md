@@ -1,9 +1,4 @@
----
-path: "/blog/static-file-server-nodejs-streams"
-date: "2020-05-04"
-title: "Static file server using streams"
-description: "How to create static file server using Nodejs streams"
----
+# Static file server using streams
 
 ## Introduction
 
