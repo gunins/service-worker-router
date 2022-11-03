@@ -21,7 +21,7 @@
         "gulp-babili": "0.0.2",
         "gulp-bump": "2.7.0",
         "gulp-clean": "0.3.2",
-        "gulp-copy": "1.0.0",
+        "gulp-copy": "4.0.1",
         "gulp-filter": "5.0.0",
         "gulp-git": "2.4.0",
         "gulp-mocha": "4.3.0",
